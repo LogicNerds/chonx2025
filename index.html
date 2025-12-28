@@ -25,6 +25,9 @@
             position: fixed;
             width: 100%;
             height: 100%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
 
         #gameContainer {
@@ -49,12 +52,30 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, #1a0033 0%, #000000 100%);
+            background: #000;
             z-index: 100;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+        }
+
+        #titleScreen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                rgba(0, 255, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
         }
 
         #titleScreen.hidden {
@@ -68,6 +89,7 @@
             justify-content: center;
             flex-direction: column;
             padding-bottom: 120px;
+            z-index: 2;
         }
 
         #logo {
@@ -76,28 +98,77 @@
             image-rendering: pixelated;
         }
 
+        #logoContainer h1 {
+            color: #ff00ff;
+            font-size: 28px;
+            text-shadow: 
+                0 0 10px #ff00ff,
+                0 0 20px #ff00ff,
+                0 0 30px #ff00ff,
+                3px 3px 0 #000;
+            margin: 20px;
+            letter-spacing: 8px;
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% {
+                text-shadow: 
+                    0 0 10px #ff00ff,
+                    0 0 20px #ff00ff,
+                    0 0 30px #ff00ff,
+                    3px 3px 0 #000;
+            }
+            92% {
+                text-shadow: 
+                    2px 0 10px #00ff00,
+                    -2px 0 20px #ff00ff,
+                    0 0 30px #ff00ff,
+                    3px 3px 0 #000;
+            }
+            94% {
+                text-shadow: 
+                    -2px 0 10px #ff00ff,
+                    2px 0 20px #00ff00,
+                    0 0 30px #ff00ff,
+                    3px 3px 0 #000;
+            }
+        }
+
         #startButton {
             font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
-            padding: 20px 40px;
-            background: #ff00ff;
-            color: #fff;
+            font-size: 14px;
+            padding: 15px 30px;
+            background: #000;
+            color: #00ff00;
             border: 4px solid #00ff00;
             cursor: pointer;
             text-transform: uppercase;
-            box-shadow: 0 0 20px #ff00ff;
-            transition: all 0.3s;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 255, 0, 0.3),
+                0 0 20px #00ff00,
+                0 0 40px #00ff00;
+            transition: all 0.1s;
             margin-top: 40px;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 2px;
         }
 
         #startButton:hover {
             background: #00ff00;
             color: #000;
-            box-shadow: 0 0 30px #00ff00;
+            box-shadow: 
+                inset 0 0 30px rgba(0, 0, 0, 0.5),
+                0 0 30px #00ff00,
+                0 0 60px #00ff00;
         }
 
         #startButton:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
+            box-shadow: 
+                inset 0 0 40px rgba(0, 255, 0, 0.8),
+                0 0 15px #00ff00;
         }
 
         #legalFooter {
@@ -105,17 +176,19 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 12px;
             text-align: center;
-            font-size: 8px;
-            line-height: 1.4;
-            color: #888;
-            border-top: 1px solid #333;
+            font-size: 7px;
+            line-height: 1.6;
+            color: #666;
+            border-top: 2px solid #00ff00;
+            z-index: 2;
+            font-family: 'Press Start 2P', monospace;
         }
 
         #legalFooter p {
-            margin: 3px 0;
+            margin: 2px 0;
         }
 
         /* Control Panel */
@@ -148,8 +221,8 @@
             position: absolute;
             width: 40px;
             height: 40px;
-            background: #333;
-            border: 2px solid #00ff00;
+            background: #000;
+            border: 3px solid #00ff00;
             color: #00ff00;
             font-size: 20px;
             display: flex;
@@ -157,11 +230,14 @@
             justify-content: center;
             user-select: none;
             touch-action: none;
+            box-shadow: inset 0 0 10px #00ff00, 0 0 10px #00ff00;
+            image-rendering: pixelated;
         }
 
         .dpad-btn:active {
             background: #00ff00;
             color: #000;
+            box-shadow: inset 0 0 20px #000, 0 0 20px #00ff00;
         }
 
         #btnLeft { left: 0; top: 40px; }
@@ -181,22 +257,30 @@
             position: absolute;
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            background: #333;
-            border: 3px solid #ff00ff;
+            background: #000;
+            border: 4px solid #ff00ff;
             color: #ff00ff;
-            font-size: 10px;
+            font-size: 9px;
+            font-family: 'Press Start 2P', monospace;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             user-select: none;
             touch-action: none;
+            box-shadow: inset 0 0 15px #ff00ff, 0 0 15px #ff00ff;
+            clip-path: polygon(
+                0% 10px, 10px 0%, 
+                calc(100% - 10px) 0%, 100% 10px,
+                100% calc(100% - 10px), calc(100% - 10px) 100%,
+                10px 100%, 0% calc(100% - 10px)
+            );
         }
 
         .action-btn:active {
             background: #ff00ff;
             color: #000;
+            box-shadow: inset 0 0 25px #000, 0 0 25px #ff00ff;
         }
 
         #btnJump {
@@ -306,32 +390,32 @@
         // ===============================================
         // ASSET CONFIGURATION
         // ===============================================
-        const ASSET_BASE_URL = "./";
+        const ASSET_BASE_URL = "https://raw.githubusercontent.com/LogicNerds/chonx2025/main/";
 
         const ASSETS = {
             images: {
-                background: ASSET_BASE_URL + "assets/background.png",
-                logo: ASSET_BASE_URL + "assets/logo.png"
+                background: ASSET_BASE_URL + "assets/background.jpg",
+                logo: ASSET_BASE_URL + "assets/chonx25 logo.png"
             },
             sprites: {
-                chonxStand: ASSET_BASE_URL + "assets/sprites/chonx_stand.png",
-                chonxRun: ASSET_BASE_URL + "assets/sprites/chonx_run.png",
-                turdal: ASSET_BASE_URL + "assets/sprites/turdal.png",
-                cloudTwerker: ASSET_BASE_URL + "assets/sprites/cloud_twerker.png",
-                khakipi: ASSET_BASE_URL + "assets/sprites/khakipi.png",
-                rat1: ASSET_BASE_URL + "assets/sprites/rat1.png",
-                rat2: ASSET_BASE_URL + "assets/sprites/rat2.png",
-                braynStand: ASSET_BASE_URL + "assets/sprites/brayn_stand.png",
-                braynSpit: ASSET_BASE_URL + "assets/sprites/brayn_spit.png"
+                chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
+                chonxRun: ASSET_BASE_URL + "assets/Chonx run gait.png",
+                turdal: ASSET_BASE_URL + "assets/Turdal.png",
+                cloudTwerker: ASSET_BASE_URL + "assets/Cloud Twerker.png",
+                khakipi: ASSET_BASE_URL + "assets/Khakipus.png",
+                rat1: ASSET_BASE_URL + "assets/SixSeven Rat 1.png",
+                rat2: ASSET_BASE_URL + "assets/SixSeven Rat 2.png",
+                braynStand: ASSET_BASE_URL + "assets/brayn wraught standing.png",
+                braynSpit: ASSET_BASE_URL + "assets/brayn wraught spitting.png"
             },
             audio: {
-                bruvBruh: ASSET_BASE_URL + "assets/audio/bruv_bruh.mp3",
-                ratsSixSeven: ASSET_BASE_URL + "assets/audio/rats_six_seven.mp3",
-                chipShoot: ASSET_BASE_URL + "assets/audio/chip_shoot.mp3",
-                chipJump: ASSET_BASE_URL + "assets/audio/chip_jump.mp3",
-                chipJetpack: ASSET_BASE_URL + "assets/audio/chip_jetpack.mp3",
-                chipHit: ASSET_BASE_URL + "assets/audio/chip_hit.mp3",
-                chipCharge: ASSET_BASE_URL + "assets/audio/chip_charge.mp3"
+                bruvBruh: ASSET_BASE_URL + "assets/Bruh.m4a",
+                ratsSixSeven: ASSET_BASE_URL + "assets/sixseven_chant.mp3", // placeholder - add if exists
+                chipShoot: ASSET_BASE_URL + "assets/chip_shoot.mp3", // placeholder
+                chipJump: ASSET_BASE_URL + "assets/chip_jump.mp3", // placeholder
+                chipJetpack: ASSET_BASE_URL + "assets/chip_jetpack.mp3", // placeholder
+                chipHit: ASSET_BASE_URL + "assets/chip_hit.mp3", // placeholder
+                chipCharge: ASSET_BASE_URL + "assets/chip_charge.mp3" // placeholder
             }
         };
 
@@ -1172,8 +1256,8 @@
             }
 
             // Draw ground line
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(0, GROUND_Y);
             ctx.lineTo(BASE_WIDTH, GROUND_Y);
