@@ -198,9 +198,10 @@
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
-            height: 30%;
-            background: rgba(0, 0, 0, 0.7);
-            border-top: 2px solid #00ff00;
+            max-width: 375px;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.9);
+            border-top: 3px solid #00ff00;
             z-index: 50;
             display: none;
         }
@@ -431,8 +432,11 @@
         canvas.height = BASE_HEIGHT;
 
         let scale = 1;
-        const GROUND_Y = BASE_HEIGHT - 100;
-        const CONTROL_ZONE_HEIGHT = BASE_HEIGHT * 0.3;
+        const HUD_HEIGHT = 100; // 15% of 667 = ~100px for HUD area
+        const CONTROL_PANEL_HEIGHT = 180; // Bottom 180px for controls
+        const ARENA_HEIGHT = BASE_HEIGHT - HUD_HEIGHT - CONTROL_PANEL_HEIGHT; // ~387px
+        const GROUND_Y = HUD_HEIGHT + ARENA_HEIGHT - 50; // Ground within arena
+        const CONTROL_ZONE_HEIGHT = CONTROL_PANEL_HEIGHT;
 
         // ===============================================
         // ASSET LOADING
@@ -687,8 +691,8 @@
             e.preventDefault();
             const pos = getInputPosition(e);
             
-            // Ignore if in control zone
-            if (pos.y > BASE_HEIGHT - CONTROL_ZONE_HEIGHT) return;
+            // Ignore if in control zone (bottom 180px)
+            if (pos.y > BASE_HEIGHT - CONTROL_PANEL_HEIGHT) return;
 
             touchActive = true;
             touchStartY = pos.y;
@@ -707,7 +711,7 @@
             if (!touchActive) return;
             
             const pos = getInputPosition(e);
-            if (pos.y > BASE_HEIGHT - CONTROL_ZONE_HEIGHT) return;
+            if (pos.y > BASE_HEIGHT - CONTROL_PANEL_HEIGHT) return;
             
             aimX = pos.x;
             aimY = pos.y;
@@ -735,7 +739,7 @@
             } else {
                 // Quick tap
                 const pos = getInputPosition(e);
-                if (pos.y <= BASE_HEIGHT - CONTROL_ZONE_HEIGHT) {
+                if (pos.y <= BASE_HEIGHT - CONTROL_PANEL_HEIGHT) {
                     shootProjectile(pos.x, pos.y, false);
                 }
             }
@@ -1363,43 +1367,49 @@
         }
 
         function drawHUD() {
+            // HUD background
             ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, BASE_WIDTH, 60);
+            ctx.fillRect(0, 0, BASE_WIDTH, HUD_HEIGHT);
+            
+            // Add HUD border
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, BASE_WIDTH, HUD_HEIGHT);
 
             ctx.font = '10px "Press Start 2P"';
             
             // Health
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(10, 10, 150, 15);
+            ctx.fillRect(10, 15, 150, 15);
             ctx.fillStyle = '#00ff00';
-            ctx.fillRect(10, 10, 150 * (player.health / 100), 15);
+            ctx.fillRect(10, 15, 150 * (player.health / 100), 15);
             ctx.fillStyle = '#fff';
-            ctx.fillText('HP: ' + Math.max(0, Math.floor(player.health)) + '%', 15, 22);
+            ctx.fillText('HP: ' + Math.max(0, Math.floor(player.health)) + '%', 15, 27);
 
             // Jetpack
             if (jetpackUnlocked) {
                 ctx.fillStyle = '#333';
-                ctx.fillRect(10, 30, 150, 15);
+                ctx.fillRect(10, 40, 150, 15);
                 ctx.fillStyle = '#00ffff';
-                ctx.fillRect(10, 30, 150 * (player.jetpackEnergy / 100), 15);
+                ctx.fillRect(10, 40, 150 * (player.jetpackEnergy / 100), 15);
                 ctx.fillStyle = '#fff';
-                ctx.fillText('JET: ' + Math.floor(player.jetpackEnergy) + '%', 15, 42);
+                ctx.fillText('JET: ' + Math.floor(player.jetpackEnergy) + '%', 15, 52);
             } else {
                 ctx.fillStyle = '#666';
-                ctx.fillText('JET: LOCKED', 15, 42);
+                ctx.fillText('JET: LOCKED', 15, 52);
             }
 
             // Score
             ctx.fillStyle = '#fff';
-            ctx.fillText('PTS: ' + score, BASE_WIDTH - 120, 22);
+            ctx.fillText('PTS: ' + score, BASE_WIDTH - 120, 27);
 
             // Wave
-            ctx.fillText('WAVE: ' + currentWave, BASE_WIDTH - 120, 42);
+            ctx.fillText('WAVE: ' + currentWave, BASE_WIDTH - 120, 52);
 
             // Unlock indicator
             if (score >= 67 && !jetpackUnlocked) {
                 ctx.fillStyle = '#ffff00';
-                ctx.fillText('67!', BASE_WIDTH / 2 - 15, 22);
+                ctx.fillText('67!', BASE_WIDTH / 2 - 15, 75);
             }
         }
 
