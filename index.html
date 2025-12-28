@@ -800,6 +800,18 @@
 
         function updateWaveSpawning() {
             if (currentWave === 4) return; // Boss wave
+            
+            // Wave 1: spawn until player hits 67 points
+            if (currentWave === 1) {
+                spawnTimer++;
+                if (spawnTimer >= 60) {
+                    spawnTimer = 0;
+                    spawnEnemy();
+                }
+                return;
+            }
+            
+            // Waves 2 and 3: spawn fixed number of enemies
             if (waveEnemiesSpawned >= waveEnemiesTotal) return;
 
             spawnTimer++;
@@ -1023,6 +1035,12 @@
             if (currentWave === 1 && score >= 67 && !jetpackUnlocked) {
                 jetpackUnlocked = true;
                 startWave(2);
+            } else if (currentWave === 2 && waveEnemiesSpawned >= waveEnemiesTotal && enemies.length === 0) {
+                // Wave 2 complete when all enemies spawned and all killed/escaped
+                startWave(3);
+            } else if (currentWave === 3 && waveEnemiesSpawned >= waveEnemiesTotal && enemies.length === 0) {
+                // Wave 3 complete when all 67 rats spawned and all killed/escaped
+                startWave(4);
             }
 
             // Check for game over
