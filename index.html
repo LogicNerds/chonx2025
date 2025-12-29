@@ -352,37 +352,8 @@
             font-size: 9px;
             line-height: 1.8;
             margin-bottom: 30px;
-            text-align: left;
-            max-width: 320px;
+            text-align: center;
             color: #ffff00;
-            border: 2px solid #ffff00;
-            padding: 15px;
-            background: rgba(255, 255, 0, 0.05);
-        }
-
-        #endTips h3 {
-            font-size: 10px;
-            margin-bottom: 10px;
-            color: #ff00ff;
-        }
-
-        #endTips ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        #endTips li {
-            margin-bottom: 8px;
-            padding-left: 15px;
-            position: relative;
-        }
-
-        #endTips li::before {
-            content: '►';
-            position: absolute;
-            left: 0;
-            color: #00ff00;
         }
 
         .end-buttons {
@@ -525,15 +496,7 @@
     <div id="endScreen">
         <h1 id="endTitle">THE FEED IS STABLE<br>(FOR NOW)</h1>
         <div class="stats" id="endStats"></div>
-        <div id="endTips">
-            <h3>TIPS:</h3>
-            <ul>
-                <li>To activate the jet pack you must score 67 points</li>
-                <li>The jet pack can only be turned on while jumping</li>
-                <li>Hold the shooting to charge your shot</li>
-                <li>Kills = jet pack energy</li>
-            </ul>
-        </div>
+        <div id="endTips">TIP: Hold shooting to charge your shot</div>
         <div class="end-buttons">
             <button id="refreshButton">REMATCH</button>
             <button id="meetCastButton">MEET THE CAST</button>
@@ -618,6 +581,7 @@
                 braynSpit: ASSET_BASE_URL + "assets/brayn wraught spitting.png"
             },
             audio: {
+                bgMusic: ASSET_BASE_URL + "assets/Chonx's%20Quest.mp3",
                 bruvBruh: ASSET_BASE_URL + "assets/Bruh.m4a",
                 ratsSixSeven: ASSET_BASE_URL + "assets/SixSevenChonx.mp3",
                 chipShoot: ASSET_BASE_URL + "assets/chip_shoot.mp3", // placeholder
@@ -699,6 +663,10 @@
             });
 
             // Setup looping sounds
+            if (sounds.bgMusic) {
+                sounds.bgMusic.loop = true;
+                sounds.bgMusic.volume = 0.4;
+            }
             if (sounds.chipJetpack) sounds.chipJetpack.loop = true;
             if (sounds.chipCharge) sounds.chipCharge.loop = true;
             if (sounds.ratsSixSeven) {
@@ -1905,6 +1873,15 @@
         // ===============================================
         // GAME END
         // ===============================================
+        const tips = [
+            "TIP: To activate the jet pack you must score 67 points",
+            "TIP: The jet pack can only be turned on while jumping",
+            "TIP: Hold shooting to charge your shot",
+            "TIP: Kills = jet pack energy"
+        ];
+        let currentTipIndex = 0;
+        let tipInterval = null;
+
         function endGame(isVictory) {
             gameState = 'ended';
             
@@ -1931,9 +1908,25 @@
             const tipsElement = document.getElementById('endTips');
             if (isVictory) {
                 tipsElement.style.display = 'none';
+                if (tipInterval) clearInterval(tipInterval);
             } else {
                 tipsElement.style.display = 'block';
+                // Cycle through tips every 3 seconds
+                currentTipIndex = 0;
+                tipsElement.textContent = tips[0];
+                if (tipInterval) clearInterval(tipInterval);
+                tipInterval = setInterval(() => {
+                    currentTipIndex = (currentTipIndex + 1) % tips.length;
+                    tipsElement.textContent = tips[currentTipIndex];
+                }, 3000);
             }
+            
+            // Stop rat chant but keep background music
+            if (sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.pause();
+                sounds.ratsSixSeven.currentTime = 0;
+            }
+            ratChantPlaying = false;
             
             document.getElementById('endScreen').classList.add('active');
         }
@@ -1968,7 +1961,14 @@
         document.getElementById('startButton').addEventListener('click', () => {
             document.getElementById('startButton').textContent = 'Loading...';
             initAudioContext(); // Initialize audio on first click
+            
             loadAssets(() => {
+                // Start background music after assets load
+                if (sounds.bgMusic) {
+                    sounds.bgMusic.currentTime = 0;
+                    sounds.bgMusic.play().catch(e => console.log('Background music blocked'));
+                }
+                
                 setupControls();
                 startGameplay();
             });
