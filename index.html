@@ -521,14 +521,32 @@
             }
         }
 
+        // ===============================================
+        // AUDIO SYSTEM
+        // ===============================================
+        let audioContext = null;
+
+        function initAudioContext() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Web Audio not supported');
+                }
+            }
+        }
+
         function playSound(soundKey, volume = 0.5) {
             if (sounds[soundKey]) {
                 try {
                     sounds[soundKey].currentTime = 0;
                     sounds[soundKey].volume = volume;
-                    sounds[soundKey].play().catch(e => console.log('Sound play blocked'));
+                    sounds[soundKey].play().catch(e => {
+                        console.log('Sound play blocked, using beep fallback');
+                        playBeep(soundKey, volume);
+                    });
                 } catch (e) {
-                    console.log('Sound play error');
+                    playBeep(soundKey, volume);
                 }
             } else {
                 // Fallback: simple Web Audio beeps for missing sounds
@@ -537,43 +555,49 @@
         }
 
         function playBeep(soundKey, volume) {
+            if (!audioContext) initAudioContext();
+            if (!audioContext) return;
+
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
                 
                 oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
+                gainNode.connect(audioContext.destination);
                 
-                gainNode.gain.value = volume * 0.3;
+                gainNode.gain.value = volume * 0.5; // Increased volume
+                
+                let duration = 0.1;
                 
                 // Different frequencies for different sounds
                 if (soundKey === 'chipShoot') {
+                    oscillator.frequency.value = 880; // Higher pitch for shoot
+                    oscillator.type = 'square';
+                    duration = 0.08;
+                } else if (soundKey === 'chipJump') {
                     oscillator.frequency.value = 440;
                     oscillator.type = 'square';
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                } else if (soundKey === 'chipJump') {
-                    oscillator.frequency.value = 330;
-                    oscillator.type = 'square';
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    duration = 0.12;
                 } else if (soundKey === 'chipHit') {
-                    oscillator.frequency.value = 110;
+                    oscillator.frequency.value = 150;
                     oscillator.type = 'sawtooth';
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    duration = 0.1;
                 } else if (soundKey === 'chipJetpack') {
-                    oscillator.frequency.value = 220;
+                    oscillator.frequency.value = 300;
                     oscillator.type = 'triangle';
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    duration = 0.15;
                 } else if (soundKey === 'chipCharge') {
-                    oscillator.frequency.value = 550;
+                    oscillator.frequency.value = 600;
                     oscillator.type = 'sine';
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    duration = 0.2;
                 }
                 
-                oscillator.start();
-                oscillator.stop(audioCtx.currentTime + 0.3);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
             } catch (e) {
-                // Silent fallback if Web Audio fails
+                console.log('Beep error:', e);
             }
         }
 
@@ -683,7 +707,7 @@
                 e.preventDefault(); 
                 if (jetpackUnlocked && player.jetpackEnergy > 0 && !player.jetpackActive) {
                     player.jetpackActive = true;
-                    player.velocityY = -15; // Launch upward to ~halfway up arena
+                    player.velocityY = -3; // Gentle lift off ground
                     player.isGrounded = false;
                     stats.jetpackActivations++;
                     playSound('chipJetpack', 0.3);
@@ -704,7 +728,7 @@
                 }
                 if (e.key === 'j' && jetpackUnlocked && player.jetpackEnergy > 0 && !player.jetpackActive) {
                     player.jetpackActive = true;
-                    player.velocityY = -15;
+                    player.velocityY = -3;
                     player.isGrounded = false;
                     stats.jetpackActivations++;
                     playSound('chipJetpack', 0.3);
@@ -893,9 +917,9 @@
                 enemies.push({
                     type: 'rat',
                     x: BASE_WIDTH + 50,
-                    y: GROUND_Y - 20,
-                    width: 20,
-                    height: 20,
+                    y: GROUND_Y - 40,
+                    width: 40,
+                    height: 40,
                     velocityX: speed,
                     velocityY: 0,
                     health: 1,
@@ -938,7 +962,7 @@
             if (bgX1 <= -BASE_WIDTH) bgX1 = bgX2 + BASE_WIDTH;
             if (bgX2 <= -BASE_WIDTH) bgX2 = bgX1 + BASE_WIDTH;
 
-            // Player movement
+            // Player movement (works on ground AND in air)
             if (keys.left) {
                 player.velocityX = -player.speed;
                 player.facing = -1;
@@ -949,21 +973,21 @@
                 player.velocityX *= 0.8;
             }
 
-            // Jetpack
+            // Jetpack hover
             if (player.jetpackActive && jetpackUnlocked) {
                 if (player.jetpackEnergy > 0) {
                     // Drain energy while jetpack is active
-                    player.jetpackEnergy -= 0.5;
+                    player.jetpackEnergy -= 0.4;
                     
-                    // Allow directional control while boosted
+                    // Hover: counteract most gravity (not all)
+                    player.velocityY += player.gravity * 0.15; // Very weak gravity while hovering
+                    
+                    // Allow up/down fine control
                     if (keys.up) {
-                        player.velocityY -= 0.5; // Extra upward thrust
+                        player.velocityY -= 0.3;
                     } else if (keys.down) {
-                        player.velocityY += 0.5; // Accelerate downward
+                        player.velocityY += 0.3;
                     }
-                    
-                    // Reduce gravity effect while jetpack active
-                    player.velocityY += player.gravity * 0.5;
                 } else {
                     // Energy depleted, deactivate
                     player.jetpackActive = false;
@@ -1346,7 +1370,12 @@
                 }
                 
                 if (bossSprite && bossSprite.complete) {
-                    ctx.drawImage(bossSprite, boss.x, boss.y, boss.width, boss.height);
+                    // Flip boss to face left
+                    ctx.save();
+                    ctx.translate(boss.x + boss.width, boss.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(bossSprite, 0, 0, boss.width, boss.height);
+                    ctx.restore();
                 } else {
                     ctx.fillStyle = '#ff0000';
                     ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
@@ -1496,6 +1525,7 @@
         // ===============================================
         document.getElementById('startButton').addEventListener('click', () => {
             document.getElementById('startButton').textContent = 'Loading...';
+            initAudioContext(); // Initialize audio on first click
             loadAssets(() => {
                 setupControls();
                 startGameplay();
