@@ -246,6 +246,63 @@
         #btnUp { left: 40px; top: 0; }
         #btnDown { left: 40px; bottom: 0; }
 
+        /* Fire Dial - Center radar screen */
+        #fireDial {
+            position: absolute;
+            left: 50%;
+            bottom: 20%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, rgba(0, 0, 0, 0.8) 70%);
+            border: 3px solid #00ff00;
+            border-radius: 50%;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 255, 0, 0.3),
+                0 0 15px #00ff00;
+            cursor: crosshair;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #fireDial::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 90%;
+            background: 
+                linear-gradient(0deg, transparent 48%, #00ff00 48%, #00ff00 52%, transparent 52%),
+                linear-gradient(90deg, transparent 48%, #00ff00 48%, #00ff00 52%, transparent 52%),
+                linear-gradient(45deg, transparent 48%, rgba(0, 255, 0, 0.3) 48%, rgba(0, 255, 0, 0.3) 52%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, rgba(0, 255, 0, 0.3) 48%, rgba(0, 255, 0, 0.3) 52%, transparent 52%);
+            border-radius: 50%;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        #fireDial::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+            pointer-events: none;
+        }
+
+        #fireDial:active {
+            box-shadow: 
+                inset 0 0 30px rgba(0, 255, 0, 0.5),
+                0 0 25px #00ff00;
+        }
+
         .action-buttons {
             position: absolute;
             right: 5%;
@@ -374,6 +431,7 @@
             <div class="dpad-btn" id="btnUp">▲</div>
             <div class="dpad-btn" id="btnDown">▼</div>
         </div>
+        <div id="fireDial"></div>
         <div class="action-buttons">
             <div class="action-btn" id="btnJetpack">JET</div>
             <div class="action-btn" id="btnJump">JUMP</div>
@@ -521,6 +579,50 @@
                 } catch (e) {
                     console.log('Sound play error');
                 }
+            } else {
+                // Fallback: simple Web Audio beeps for missing sounds
+                playBeep(soundKey, volume);
+            }
+        }
+
+        function playBeep(soundKey, volume) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                gainNode.gain.value = volume * 0.3;
+                
+                // Different frequencies for different sounds
+                if (soundKey === 'chipShoot') {
+                    oscillator.frequency.value = 440;
+                    oscillator.type = 'square';
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                } else if (soundKey === 'chipJump') {
+                    oscillator.frequency.value = 330;
+                    oscillator.type = 'square';
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                } else if (soundKey === 'chipHit') {
+                    oscillator.frequency.value = 110;
+                    oscillator.type = 'sawtooth';
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                } else if (soundKey === 'chipJetpack') {
+                    oscillator.frequency.value = 220;
+                    oscillator.type = 'triangle';
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                } else if (soundKey === 'chipCharge') {
+                    oscillator.frequency.value = 550;
+                    oscillator.type = 'sine';
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                }
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) {
+                // Silent fallback if Web Audio fails
             }
         }
 
@@ -566,11 +668,6 @@
         // ===============================================
         // SHOOTING STATE
         // ===============================================
-        let isCharging = false;
-        let chargeStartTime = 0;
-        let chargeLevel = 0;
-        let aimX = 0;
-        let aimY = 0;
         const projectiles = [];
 
         // ===============================================
@@ -601,10 +698,6 @@
             jump: false,
             jetpack: false
         };
-
-        // Touch/Mouse for shooting
-        let touchActive = false;
-        let touchStartY = 0;
 
         function setupControls() {
             // D-pad
@@ -678,94 +771,62 @@
                 if (e.key === 'ArrowDown') keys.down = false;
             });
 
-            // Shooting - touch/mouse
-            canvas.addEventListener('touchstart', handleShootStart);
-            canvas.addEventListener('touchmove', handleShootMove);
-            canvas.addEventListener('touchend', handleShootEnd);
-            canvas.addEventListener('mousedown', handleShootStart);
-            canvas.addEventListener('mousemove', handleShootMove);
-            canvas.addEventListener('mouseup', handleShootEnd);
-        }
+            // Fire Dial - touch/mouse
+            const fireDial = document.getElementById('fireDial');
+            let dialCharging = false;
+            let dialChargeStart = 0;
 
-        function handleShootStart(e) {
-            e.preventDefault();
-            const pos = getInputPosition(e);
+            fireDial.addEventListener('touchstart', handleDialStart);
+            fireDial.addEventListener('mousedown', handleDialStart);
+            fireDial.addEventListener('touchend', handleDialEnd);
+            fireDial.addEventListener('mouseup', handleDialEnd);
             
-            // Ignore if in control zone (bottom 180px)
-            if (pos.y > BASE_HEIGHT - CONTROL_PANEL_HEIGHT) return;
-
-            touchActive = true;
-            touchStartY = pos.y;
-            aimX = pos.x;
-            aimY = pos.y;
-            
-            if (!player.isJumping) {
-                isCharging = true;
-                chargeStartTime = Date.now();
-                playSound('chipCharge', 0.2);
+            function handleDialStart(e) {
+                e.preventDefault();
+                if (!player.isJumping) {
+                    dialCharging = true;
+                    dialChargeStart = Date.now();
+                    playSound('chipCharge', 0.2);
+                }
             }
-        }
-
-        function handleShootMove(e) {
-            e.preventDefault();
-            if (!touchActive) return;
             
-            const pos = getInputPosition(e);
-            if (pos.y > BASE_HEIGHT - CONTROL_PANEL_HEIGHT) return;
-            
-            aimX = pos.x;
-            aimY = pos.y;
-        }
-
-        function handleShootEnd(e) {
-            e.preventDefault();
-            if (!touchActive) return;
-            
-            touchActive = false;
-            
-            if (isCharging) {
+            function handleDialEnd(e) {
+                e.preventDefault();
+                if (!dialCharging) return;
+                
+                dialCharging = false;
                 if (sounds.chipCharge) sounds.chipCharge.pause();
                 
-                const chargeDuration = (Date.now() - chargeStartTime) / 1000;
-                const isChargedShot = chargeDuration > 0.3;
+                const rect = fireDial.getBoundingClientRect();
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
                 
-                if (isChargedShot) {
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+                const angle = Math.atan2(dy, dx);
+                
+                const chargeDuration = (Date.now() - dialChargeStart) / 1000;
+                const isCharged = chargeDuration > 0.3;
+                
+                if (isCharged) {
                     stats.chargeShotsUsed++;
                 }
                 
-                shootProjectile(aimX, aimY, isChargedShot);
-                isCharging = false;
-                chargeLevel = 0;
-            } else {
-                // Quick tap
-                const pos = getInputPosition(e);
-                if (pos.y <= BASE_HEIGHT - CONTROL_PANEL_HEIGHT) {
-                    shootProjectile(pos.x, pos.y, false);
-                }
+                shootProjectileAtAngle(angle, isCharged);
             }
         }
 
-        function getInputPosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            return {
-                x: (clientX - rect.left) * (BASE_WIDTH / rect.width),
-                y: (clientY - rect.top) * (BASE_HEIGHT / rect.height)
-            };
-        }
-
-        function shootProjectile(targetX, targetY, isCharged) {
-            const dx = targetX - (player.x + player.width / 2);
-            const dy = targetY - (player.y + player.height / 2);
-            const dist = Math.sqrt(dx * dx + dy * dy);
+        function shootProjectileAtAngle(angle, isCharged) {
+            const speed = 8;
             
             projectiles.push({
                 x: player.x + player.width / 2,
                 y: player.y + player.height / 2,
-                velocityX: (dx / dist) * 8,
-                velocityY: (dy / dist) * 8,
+                velocityX: Math.cos(angle) * speed,
+                velocityY: Math.sin(angle) * speed,
                 damage: isCharged ? 3 : 1,
                 radius: isCharged ? 8 : 4,
                 isCharged: isCharged
@@ -784,13 +845,13 @@
             spawnTimer = 0;
 
             if (waveNum === 1) {
-                // Wave 1: Turdals
-                waveEnemiesTotal = 17; // Need 67 points at 4 pts each
+                // Wave 1: Khakipi only (easier warmup with darting movement)
+                waveEnemiesTotal = 999; // Unlimited until 67 points
             } else if (waveNum === 2) {
-                // Wave 2: Cloud Twerkers & Khakipi
+                // Wave 2: Turdals and Cloud Twerkers (chaotic mix)
                 waveEnemiesTotal = 40;
             } else if (waveNum === 3) {
-                // Wave 3: 67 Rats
+                // Wave 3: 67 Rats (jumping, varied speeds)
                 waveEnemiesTotal = 67;
             } else if (waveNum === 4) {
                 // Boss fight
@@ -801,10 +862,10 @@
         function updateWaveSpawning() {
             if (currentWave === 4) return; // Boss wave
             
-            // Wave 1: spawn until player hits 67 points
+            // Wave 1: spawn Khakipi until player hits 67 points
             if (currentWave === 1) {
                 spawnTimer++;
-                if (spawnTimer >= 60) {
+                if (spawnTimer >= 50) {
                     spawnTimer = 0;
                     spawnEnemy();
                 }
@@ -817,7 +878,7 @@
             spawnTimer++;
             
             let spawnRate = 60; // Default spawn every 60 frames
-            if (currentWave === 2) spawnRate = 40;
+            if (currentWave === 2) spawnRate = 45;
             if (currentWave === 3) spawnRate = 20;
 
             if (spawnTimer >= spawnRate) {
@@ -830,23 +891,39 @@
             waveEnemiesSpawned++;
 
             if (currentWave === 1) {
-                // Turdal
+                // Khakipi - darting ground enemy
                 enemies.push({
-                    type: 'turdal',
+                    type: 'khakipi',
                     x: BASE_WIDTH + 50,
-                    y: GROUND_Y - 30,
-                    width: 30,
-                    height: 30,
-                    velocityX: -1.5,
+                    y: GROUND_Y - 25,
+                    width: 25,
+                    height: 25,
+                    velocityX: -2,
                     velocityY: 0,
-                    health: 3,
-                    shootTimer: Math.random() * 60 + 60,
-                    shootCooldown: 120
+                    health: 2,
+                    burstTimer: 30,
+                    onGround: true,
+                    points: 4 // 4 points each like old Wave 1
                 });
             } else if (currentWave === 2) {
-                // Alternate between Cloud Twerker and Khakipi
+                // Alternate between Turdal and Cloud Twerker
                 if (Math.random() < 0.5) {
-                    // Cloud Twerker
+                    // Turdal - rolling laser shooter
+                    enemies.push({
+                        type: 'turdal',
+                        x: BASE_WIDTH + 50,
+                        y: GROUND_Y - 30,
+                        width: 30,
+                        height: 30,
+                        velocityX: -1.5,
+                        velocityY: 0,
+                        health: 3,
+                        shootTimer: Math.random() * 60 + 60,
+                        shootCooldown: 120,
+                        points: 2
+                    });
+                } else {
+                    // Cloud Twerker - floating acid dropper
                     enemies.push({
                         type: 'cloudTwerker',
                         x: BASE_WIDTH + 50,
@@ -857,36 +934,30 @@
                         velocityY: Math.sin(Date.now() / 1000) * 0.5,
                         health: 2,
                         floatPhase: Math.random() * Math.PI * 2,
-                        dropTimer: Math.random() * 90 + 60
-                    });
-                } else {
-                    // Khakipi
-                    enemies.push({
-                        type: 'khakipi',
-                        x: BASE_WIDTH + 50,
-                        y: GROUND_Y - 25,
-                        width: 25,
-                        height: 25,
-                        velocityX: -2,
-                        velocityY: 0,
-                        health: 2,
-                        burstTimer: 30,
-                        onGround: true
+                        dropTimer: Math.random() * 90 + 60,
+                        points: 2
                     });
                 }
             } else if (currentWave === 3) {
-                // Rat
+                // Rat - jumping, varied speed
+                const speed = -1.5 - Math.random() * 1.5; // -1.5 to -3 speed variation
+                const jumpChance = Math.random() < 0.6; // 60% of rats can jump
+                
                 enemies.push({
                     type: 'rat',
                     x: BASE_WIDTH + 50,
                     y: GROUND_Y - 20,
                     width: 20,
                     height: 20,
-                    velocityX: -2,
+                    velocityX: speed,
                     velocityY: 0,
                     health: 1,
                     animFrame: 0,
-                    animTimer: 0
+                    animTimer: 0,
+                    canJump: jumpChance,
+                    jumpTimer: Math.random() * 60 + 30,
+                    onGround: true,
+                    points: 1
                 });
             }
         }
@@ -919,32 +990,6 @@
 
             if (bgX1 <= -BASE_WIDTH) bgX1 = bgX2 + BASE_WIDTH;
             if (bgX2 <= -BASE_WIDTH) bgX2 = bgX1 + BASE_WIDTH;
-
-            // Handle charging
-            if (isCharging && !player.isJumping) {
-                const chargeDuration = (Date.now() - chargeStartTime) / 1000;
-                
-                // Health drain
-                if (chargeDuration >= 1 && chargeDuration < 2) {
-                    player.health -= 0.05; // ~3% per second
-                } else if (chargeDuration >= 2 && chargeDuration < 3) {
-                    player.health -= 0.083; // ~5% per second
-                } else if (chargeDuration >= 3) {
-                    player.health -= 0.167; // ~10% per second
-                }
-                
-                // Hard cap at 3 seconds
-                if (chargeDuration >= 3) {
-                    chargeLevel = 3;
-                } else {
-                    chargeLevel = chargeDuration;
-                }
-                
-                // Slow movement while charging
-                player.speed = 1.5;
-            } else {
-                player.speed = 3;
-            }
 
             // Player movement
             if (keys.left) {
@@ -1096,11 +1141,33 @@
                 } else if (e.type === 'rat') {
                     e.x += e.velocityX;
                     
-                    // Animate
+                    // Animate marching
                     e.animTimer++;
                     if (e.animTimer > 15) {
                         e.animFrame = 1 - e.animFrame;
                         e.animTimer = 0;
+                    }
+                    
+                    // Jumping rats (60% can jump, 1/4 of playfield height)
+                    if (e.canJump && e.onGround) {
+                        e.jumpTimer--;
+                        if (e.jumpTimer <= 0) {
+                            e.jumpTimer = 40 + Math.random() * 40;
+                            e.velocityY = -8; // Jump ~1/4 of arena height
+                            e.onGround = false;
+                        }
+                    }
+                    
+                    // Apply gravity to jumping rats
+                    if (!e.onGround) {
+                        e.velocityY += 0.5; // Gravity
+                        e.y += e.velocityY;
+                        
+                        if (e.y >= GROUND_Y - e.height) {
+                            e.y = GROUND_Y - e.height;
+                            e.velocityY = 0;
+                            e.onGround = true;
+                        }
                     }
                 }
 
@@ -1122,10 +1189,8 @@
                         if (e.health <= 0) {
                             stats.enemiesKilled++;
                             
-                            // Award points
-                            if (e.type === 'turdal') score += 4;
-                            else if (e.type === 'cloudTwerker' || e.type === 'khakipi') score += 2;
-                            else if (e.type === 'rat') score += 1;
+                            // Award points based on enemy type
+                            score += e.points || 1;
                             
                             // Refill jetpack on kill
                             if (jetpackUnlocked) {
@@ -1359,26 +1424,6 @@
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
             });
-
-            // Draw charge indicator
-            if (isCharging) {
-                const centerX = player.x + player.width / 2;
-                const centerY = player.y + player.height / 2;
-                
-                ctx.strokeStyle = '#ffff00';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, 20 + chargeLevel * 10, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // Aim line
-                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(aimX, aimY);
-                ctx.stroke();
-            }
 
             // Draw HUD
             drawHUD();
