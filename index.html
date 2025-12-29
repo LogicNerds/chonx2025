@@ -426,7 +426,7 @@
             },
             audio: {
                 bruvBruh: ASSET_BASE_URL + "assets/Bruh.m4a",
-                ratsSixSeven: ASSET_BASE_URL + "assets/sixseven_chant.mp3", // placeholder - add if exists
+                ratsSixSeven: ASSET_BASE_URL + "assets/SixSevenChonx.mp3",
                 chipShoot: ASSET_BASE_URL + "assets/chip_shoot.mp3", // placeholder
                 chipJump: ASSET_BASE_URL + "assets/chip_jump.mp3", // placeholder
                 chipJetpack: ASSET_BASE_URL + "assets/chip_jetpack.mp3", // placeholder
@@ -462,12 +462,8 @@
         let totalImages = 0;
 
         function loadAssets(callback) {
-            // Load logo for title screen
-            const logo = document.getElementById('logo');
-            logo.src = ASSETS.images.logo;
-
             // Count sprite assets
-            totalImages = Object.keys(ASSETS.sprites).length + Object.keys(ASSETS.images).length - 1; // -1 for logo
+            totalImages = Object.keys(ASSETS.sprites).length + Object.keys(ASSETS.images).length - 1; // -1 for logo (loaded separately)
 
             // Load background
             sprites.background = new Image();
@@ -512,6 +508,10 @@
             // Setup looping sounds
             if (sounds.chipJetpack) sounds.chipJetpack.loop = true;
             if (sounds.chipCharge) sounds.chipCharge.loop = true;
+            if (sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.loop = true;
+                sounds.ratsSixSeven.volume = 0.4;
+            }
         }
 
         function checkAssetsLoaded(callback) {
@@ -654,6 +654,7 @@
         let spawnTimer = 0;
         let boss = null;
         let bossPhase = 1;
+        let ratChantPlaying = false;
 
         // ===============================================
         // BACKGROUND SCROLLING
@@ -705,12 +706,15 @@
 
             btnJetpack.addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
-                if (jetpackUnlocked && player.jetpackEnergy > 0 && !player.jetpackActive) {
-                    player.jetpackActive = true;
-                    player.velocityY = -3; // Gentle lift off ground
-                    player.isGrounded = false;
-                    stats.jetpackActivations++;
-                    playSound('chipJetpack', 0.3);
+                if (jetpackUnlocked && player.jetpackEnergy > 0) {
+                    // Toggle jetpack on/off
+                    player.jetpackActive = !player.jetpackActive;
+                    
+                    if (player.jetpackActive) {
+                        stats.jetpackActivations++;
+                        playSound('chipJetpack', 0.3);
+                        player.isGrounded = false;
+                    }
                 }
             });
 
@@ -726,12 +730,14 @@
                     player.isGrounded = false;
                     playSound('chipJump', 0.3);
                 }
-                if (e.key === 'j' && jetpackUnlocked && player.jetpackEnergy > 0 && !player.jetpackActive) {
-                    player.jetpackActive = true;
-                    player.velocityY = -3;
-                    player.isGrounded = false;
-                    stats.jetpackActivations++;
-                    playSound('chipJetpack', 0.3);
+                if (e.key === 'j' && jetpackUnlocked && player.jetpackEnergy > 0) {
+                    player.jetpackActive = !player.jetpackActive;
+                    
+                    if (player.jetpackActive) {
+                        stats.jetpackActivations++;
+                        playSound('chipJetpack', 0.3);
+                        player.isGrounded = false;
+                    }
                 }
             });
 
@@ -930,6 +936,13 @@
                     onGround: true,
                     points: 1
                 });
+                
+                // Start rat chant on first rat spawn
+                if (!ratChantPlaying && sounds.ratsSixSeven) {
+                    sounds.ratsSixSeven.currentTime = 0;
+                    sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                    ratChantPlaying = true;
+                }
             }
         }
 
@@ -973,24 +986,25 @@
                 player.velocityX *= 0.8;
             }
 
-            // Jetpack hover
+            // Jetpack - toggleable flight
             if (player.jetpackActive && jetpackUnlocked) {
                 if (player.jetpackEnergy > 0) {
-                    // Drain energy while jetpack is active
-                    player.jetpackEnergy -= 0.4;
+                    // Drain energy while jetpack is active (~8 seconds total at 60fps)
+                    player.jetpackEnergy -= 0.2;
                     
-                    // Hover: counteract most gravity (not all)
-                    player.velocityY += player.gravity * 0.15; // Very weak gravity while hovering
+                    // Counteract gravity completely - stay airborne
+                    player.velocityY = 0;
                     
-                    // Allow up/down fine control
+                    // Allow directional control
                     if (keys.up) {
-                        player.velocityY -= 0.3;
+                        player.velocityY = -3;
                     } else if (keys.down) {
-                        player.velocityY += 0.3;
+                        player.velocityY = 3;
                     }
                 } else {
-                    // Energy depleted, deactivate
+                    // Energy depleted, deactivate and fall
                     player.jetpackActive = false;
+                    player.jetpackEnergy = 0;
                 }
             } else {
                 // Normal gravity when jetpack inactive
@@ -1071,6 +1085,16 @@
         }
 
         function updateEnemies() {
+            // Check if there are any rats on screen
+            const ratsOnScreen = enemies.filter(e => e.type === 'rat').length;
+            
+            // Stop rat chant if no rats remain
+            if (ratChantPlaying && ratsOnScreen === 0 && sounds.ratsSixSeven) {
+                sounds.ratsSixSeven.pause();
+                sounds.ratsSixSeven.currentTime = 0;
+                ratChantPlaying = false;
+            }
+            
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
 
@@ -1523,6 +1547,10 @@
         // ===============================================
         // INITIALIZE
         // ===============================================
+        
+        // Load logo immediately on page load
+        document.getElementById('logo').src = ASSET_BASE_URL + "assets/chonx25%20logo.png";
+        
         document.getElementById('startButton').addEventListener('click', () => {
             document.getElementById('startButton').textContent = 'Loading...';
             initAudioContext(); // Initialize audio on first click
