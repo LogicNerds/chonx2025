@@ -398,6 +398,23 @@
             padding: 20px;
             border: 3px solid #00ff00;
             background: rgba(0, 255, 0, 0.05);
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .cast-member img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            border: 2px solid #00ff00;
+            background: #000;
+            flex-shrink: 0;
+        }
+
+        .cast-member-text {
+            flex: 1;
         }
 
         .cast-member h2 {
@@ -480,33 +497,51 @@
         <h1 class="cast-header">MEET THE CAST</h1>
         
         <div class="cast-member">
-            <h2>CHONX THE SPACE HAMSTER</h2>
-            <p>A rotund rodent with dreams bigger than his waistline. Armed with nothing but determination and a questionable jetpack, Chonx fights to keep the social media feed stable. His hobbies include snacking, hoarding sunflower seeds, and pretending he knows what he's doing.</p>
+            <img id="castChonx" src="" alt="Chonx">
+            <div class="cast-member-text">
+                <h2>CHONX THE SPACE HAMSTER</h2>
+                <p>A rotund rodent with dreams bigger than his waistline. Armed with nothing but determination and a questionable jetpack, Chonx fights to keep the social media feed stable. His hobbies include snacking, hoarding sunflower seeds, and pretending he knows what he's doing.</p>
+            </div>
         </div>
 
         <div class="cast-member">
-            <h2>KHAKIPI</h2>
-            <p>These darting menaces are the embodiment of annoying pop-up ads given physical form. They burst onto the scene with chaotic energy, impossible to predict, and even harder to hit. Legend says they're just trying to reach you about your car's extended warranty.</p>
+            <img id="castKhakipi" src="" alt="Khakipi">
+            <div class="cast-member-text">
+                <h2>KHAKIPI</h2>
+                <p>These darting menaces are the embodiment of annoying pop-up ads given physical form. They burst onto the scene with chaotic energy, impossible to predict, and even harder to hit. Legend says they're just trying to reach you about your car's extended warranty.</p>
+            </div>
         </div>
 
         <div class="cast-member">
-            <h2>TURDALS</h2>
-            <p>Rolling piles of algorithmic garbage that clog up the feed. They shoot laser-targeted nonsense at anyone who dares scroll past. Despite their... questionable appearance, they're surprisingly effective at ruining your day.</p>
+            <img id="castTurdal" src="" alt="Turdal">
+            <div class="cast-member-text">
+                <h2>TURDALS</h2>
+                <p>Rolling piles of algorithmic garbage that clog up the feed. They shoot laser-targeted nonsense at anyone who dares scroll past. Despite their... questionable appearance, they're surprisingly effective at ruining your day.</p>
+            </div>
         </div>
 
         <div class="cast-member">
-            <h2>CLOUD TWERKERS</h2>
-            <p>Graceful yet deadly, these airborne terrors rain acid commentary from above. They float through the feed spreading toxic positivity and passive-aggressive emojis. Approach with caution - their vibes may seem chill, but their droppings are anything but.</p>
+            <img id="castCloudTwerker" src="" alt="Cloud Twerker">
+            <div class="cast-member-text">
+                <h2>CLOUD TWERKERS</h2>
+                <p>Graceful yet deadly, these airborne terrors rain acid commentary from above. They float through the feed spreading toxic positivity and passive-aggressive emojis. Approach with caution - their vibes may seem chill, but their droppings are anything but.</p>
+            </div>
         </div>
 
         <div class="cast-member">
-            <h2>THE 6-7 RATS</h2>
-            <p>A swarm of exactly 67 rodents chanting their own existence into reality. They march forward in chaotic unison, jumping over each other in a furry mosh pit of mayhem. No one knows why there are 67. No one wants to ask.</p>
+            <img id="castRat" src="" alt="6-7 Rat">
+            <div class="cast-member-text">
+                <h2>THE 6-7 RATS</h2>
+                <p>A swarm of exactly 67 rodents chanting their own existence into reality. They march forward in chaotic unison, jumping over each other in a furry mosh pit of mayhem. No one knows why there are 67. No one wants to ask.</p>
+            </div>
         </div>
 
         <div class="cast-member">
-            <h2>BRAYN WRAUGHT</h2>
-            <p>The final boss. A sentient brain that somehow achieved physical form and an attitude problem. Brayn doesn't just spit facts - he spits *Bruhs* with the force of a thousand dismissive teenagers. In Phase 2, he summons the 6-7 Rats because apparently one existential crisis wasn't enough. Defeat him to restore balance... until the next refresh.</p>
+            <img id="castBrayn" src="" alt="Brayn Wraught">
+            <div class="cast-member-text">
+                <h2>BRAYN WRAUGHT</h2>
+                <p>The final boss. A sentient brain that somehow achieved physical form and an attitude problem. Brayn doesn't just spit facts - he spits *Bruhs* with the force of a thousand dismissive teenagers. In Phase 2, he summons the 6-7 Rats because apparently one existential crisis wasn't enough. Defeat him to restore balance... until the next refresh.</p>
+            </div>
         </div>
 
         <button id="closeCastButton">BACK</button>
@@ -826,6 +861,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
+                        player.velocityY = -2; // Initial lift off ground
                     }
                 }
             });
@@ -842,6 +878,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
+                        player.velocityY = -2; // Initial lift off ground
                     }
                 }
             });
@@ -865,6 +902,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
+                        player.velocityY = -2; // Initial lift off ground
                     }
                 }
             });
@@ -1688,6 +1726,12 @@
                 ctx.fillStyle = '#ffff00';
                 ctx.fillText('67!', BASE_WIDTH / 2 - 15, 75);
             }
+            
+            // DEBUG: Jetpack status (remove this later)
+            ctx.fillStyle = '#ffff00';
+            ctx.font = '8px "Press Start 2P"';
+            ctx.fillText('JET UNLOCKED: ' + (jetpackUnlocked ? 'YES' : 'NO'), 10, 75);
+            ctx.fillText('JET ACTIVE: ' + (player.jetpackActive ? 'YES' : 'NO'), 10, 88);
         }
 
         // ===============================================
@@ -1767,8 +1811,14 @@
         // INITIALIZE
         // ===============================================
         
-        // Load logo immediately on page load
+        // Load logo and cast images immediately on page load
         document.getElementById('logo').src = ASSET_BASE_URL + "assets/chonx25%20logo.png";
+        document.getElementById('castChonx').src = ASSETS.sprites.chonxStand;
+        document.getElementById('castKhakipi').src = ASSETS.sprites.khakipi;
+        document.getElementById('castTurdal').src = ASSETS.sprites.turdal;
+        document.getElementById('castCloudTwerker').src = ASSETS.sprites.cloudTwerker;
+        document.getElementById('castRat').src = ASSETS.sprites.rat1;
+        document.getElementById('castBrayn').src = ASSETS.sprites.braynStand;
         
         document.getElementById('startButton').addEventListener('click', () => {
             document.getElementById('startButton').textContent = 'Loading...';
