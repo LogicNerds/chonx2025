@@ -34,6 +34,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: #000;
+            z-index: 1;
         }
 
         #gameCanvas {
@@ -41,6 +42,7 @@
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
+            pointer-events: none;
         }
 
         /* Title Screen Overlay */
@@ -968,13 +970,17 @@
                 y: GROUND_Y - 120,
                 width: 100,
                 height: 120,
+                velocityX: 0,
+                velocityY: 0,
                 health: 67,
                 maxHealth: 67,
-                shootTimer: 60,
-                shootCooldown: 80,
+                shootTimer: 30, // Faster shooting (was 60)
+                shootCooldown: 45, // Faster cooldown (was 80)
                 isShooting: false,
                 shootAnimTimer: 0,
-                ratSpawnTimer: 0
+                ratSpawnTimer: 0,
+                hopTimer: 90, // Hop every 90 frames
+                isGrounded: true
             };
         }
 
@@ -1234,6 +1240,43 @@
         }
 
         function updateBoss() {
+            // Hop movement
+            boss.hopTimer--;
+            if (boss.hopTimer <= 0 && boss.isGrounded) {
+                boss.hopTimer = 60 + Math.random() * 60; // Hop every 2-4 seconds
+                boss.velocityY = -8; // Hop upward
+                boss.isGrounded = false;
+                
+                // Move toward or away from Chonx
+                if (player.x < boss.x - 50) {
+                    boss.velocityX = -1.5; // Move left toward Chonx
+                } else if (player.x > boss.x + boss.width + 50) {
+                    boss.velocityX = 1.5; // Move right toward Chonx
+                } else {
+                    boss.velocityX = 0; // Close enough
+                }
+            }
+            
+            // Apply gravity and movement
+            if (!boss.isGrounded) {
+                boss.velocityY += 0.5; // Gravity
+                boss.y += boss.velocityY;
+                
+                if (boss.y >= GROUND_Y - boss.height) {
+                    boss.y = GROUND_Y - boss.height;
+                    boss.velocityY = 0;
+                    boss.isGrounded = true;
+                    boss.velocityX = 0; // Stop horizontal movement on landing
+                }
+            }
+            
+            boss.x += boss.velocityX;
+            
+            // Keep boss on screen
+            if (boss.x < BASE_WIDTH / 2) boss.x = BASE_WIDTH / 2;
+            if (boss.x > BASE_WIDTH - boss.width - 20) boss.x = BASE_WIDTH - boss.width - 20;
+            
+            // Aggressive shooting
             boss.shootTimer--;
             
             if (boss.shootTimer <= 0) {
@@ -1241,16 +1284,16 @@
                 boss.isShooting = true;
                 boss.shootAnimTimer = 20;
                 
-                // Shoot glob toward player
-                const dx = player.x - boss.x;
-                const dy = player.y - boss.y;
+                // Track Chonx position for aimed shots
+                const dx = player.x + player.width / 2 - boss.x;
+                const dy = player.y + player.height / 2 - (boss.y + boss.height / 2);
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
                 spawnEnemyProjectile(
                     boss.x,
                     boss.y + boss.height / 2,
-                    (dx / dist) * 4,
-                    (dy / dist) * 4
+                    (dx / dist) * 5, // Faster projectiles
+                    (dy / dist) * 5
                 );
                 
                 playSound('bruvBruh', 0.5);
@@ -1266,6 +1309,7 @@
             // Phase 2 at 50% health
             if (boss.health <= boss.maxHealth / 2 && bossPhase === 1) {
                 bossPhase = 2;
+                boss.shootCooldown = 30; // Even faster in phase 2
             }
 
             // Spawn rats in phase 2
