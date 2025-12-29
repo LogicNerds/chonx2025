@@ -863,7 +863,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
-                        player.velocityY = -2; // Initial lift off ground
+                        player.velocityY = -8; // Strong initial lift off ground
                     }
                 }
             });
@@ -880,7 +880,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
-                        player.velocityY = -2; // Initial lift off ground
+                        player.velocityY = -8; // Strong initial lift off ground
                     }
                 }
             });
@@ -904,7 +904,7 @@
                         stats.jetpackActivations++;
                         playSound('chipJetpack', 0.3);
                         player.isGrounded = false;
-                        player.velocityY = -2; // Initial lift off ground
+                        player.velocityY = -8; // Strong initial lift off ground
                     }
                 }
             });
@@ -928,11 +928,9 @@
             
             function handleDialStart(e) {
                 e.preventDefault();
-                if (!player.isJumping) {
-                    dialCharging = true;
-                    dialChargeStart = Date.now();
-                    playSound('chipCharge', 0.2);
-                }
+                dialCharging = true;
+                dialChargeStart = Date.now();
+                playSound('chipCharge', 0.2);
             }
             
             function handleDialEnd(e) {
