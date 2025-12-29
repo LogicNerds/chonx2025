@@ -348,6 +348,43 @@
             max-width: 300px;
         }
 
+        #endTips {
+            font-size: 9px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+            text-align: left;
+            max-width: 320px;
+            color: #ffff00;
+            border: 2px solid #ffff00;
+            padding: 15px;
+            background: rgba(255, 255, 0, 0.05);
+        }
+
+        #endTips h3 {
+            font-size: 10px;
+            margin-bottom: 10px;
+            color: #ff00ff;
+        }
+
+        #endTips ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #endTips li {
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        #endTips li::before {
+            content: '►';
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+        }
+
         .end-buttons {
             display: flex;
             gap: 20px;
@@ -488,6 +525,15 @@
     <div id="endScreen">
         <h1 id="endTitle">THE FEED IS STABLE<br>(FOR NOW)</h1>
         <div class="stats" id="endStats"></div>
+        <div id="endTips">
+            <h3>TIPS:</h3>
+            <ul>
+                <li>To activate the jet pack you must score 67 points</li>
+                <li>The jet pack can only be turned on while jumping</li>
+                <li>Hold the shooting to charge your shot</li>
+                <li>Kills = jet pack energy</li>
+            </ul>
+        </div>
         <div class="end-buttons">
             <button id="refreshButton">REMATCH</button>
             <button id="meetCastButton">MEET THE CAST</button>
@@ -1082,9 +1128,31 @@
                     });
                 }
             } else if (currentWave === 3) {
-                // Rat - jumping, varied speed
-                const speed = -1.5 - Math.random() * 1.5; // -1.5 to -3 speed variation
-                const jumpChance = Math.random() < 0.6; // 60% of rats can jump
+                // Rat - highly varied speed and jumping
+                const speedType = Math.random();
+                let speed, jumpPower, jumpFrequency;
+                
+                if (speedType < 0.2) {
+                    // Very slow (20%)
+                    speed = -0.8;
+                    jumpPower = 0; // Stays grounded
+                    jumpFrequency = 0;
+                } else if (speedType < 0.4) {
+                    // Slow (20%)
+                    speed = -1.2;
+                    jumpPower = -5; // Small hops
+                    jumpFrequency = 80 + Math.random() * 40;
+                } else if (speedType < 0.7) {
+                    // Medium (30%)
+                    speed = -2;
+                    jumpPower = -8; // Medium jumps
+                    jumpFrequency = 50 + Math.random() * 30;
+                } else {
+                    // Very fast (30%)
+                    speed = -3.5;
+                    jumpPower = -12; // High, far jumps
+                    jumpFrequency = 30 + Math.random() * 20;
+                }
                 
                 enemies.push({
                     type: 'rat',
@@ -1097,8 +1165,10 @@
                     health: 1,
                     animFrame: 0,
                     animTimer: 0,
-                    canJump: jumpChance,
-                    jumpTimer: Math.random() * 60 + 30,
+                    canJump: jumpPower !== 0,
+                    jumpPower: jumpPower,
+                    jumpTimer: jumpFrequency,
+                    jumpFrequency: jumpFrequency,
                     onGround: true,
                     points: 1
                 });
@@ -1284,11 +1354,22 @@
                     e.y += Math.sin(e.floatPhase) * 0.5;
                     e.y += 0.2; // Slow descent
                     
-                    // Drop acid
+                    // Drop multiple small raindrops
                     e.dropTimer--;
                     if (e.dropTimer <= 0) {
                         e.dropTimer = 90;
-                        spawnEnemyProjectile(e.x, e.y + e.height, 0, 3);
+                        // Spawn 3-5 small raindrops
+                        const numDrops = 3 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < numDrops; i++) {
+                            spawnEnemyProjectile(
+                                e.x + (Math.random() - 0.5) * e.width,
+                                e.y + e.height,
+                                (Math.random() - 0.5) * 0.5,
+                                3,
+                                1, // Half damage (was 2)
+                                2  // Small radius
+                            );
+                        }
                     }
                 } else if (e.type === 'khakipi') {
                     e.x += e.velocityX;
@@ -1319,12 +1400,12 @@
                         e.animTimer = 0;
                     }
                     
-                    // Jumping rats (60% can jump, 1/4 of playfield height)
+                    // Varied jumping based on rat type
                     if (e.canJump && e.onGround) {
                         e.jumpTimer--;
                         if (e.jumpTimer <= 0) {
-                            e.jumpTimer = 40 + Math.random() * 40;
-                            e.velocityY = -8; // Jump ~1/4 of arena height
+                            e.jumpTimer = e.jumpFrequency;
+                            e.velocityY = e.jumpPower;
                             e.onGround = false;
                         }
                     }
@@ -1383,8 +1464,8 @@
 
         const enemyProjectiles = [];
 
-        function spawnEnemyProjectile(x, y, vx, vy) {
-            enemyProjectiles.push({ x, y, velocityX: vx, velocityY: vy, radius: 5 });
+        function spawnEnemyProjectile(x, y, vx, vy, damage = 2, radius = 5) {
+            enemyProjectiles.push({ x, y, velocityX: vx, velocityY: vy, radius, damage });
         }
 
         function updateBoss() {
@@ -1465,10 +1546,28 @@
                 boss.ratSpawnTimer++;
                 if (boss.ratSpawnTimer >= 180) {
                     boss.ratSpawnTimer = 0;
-                    // Spawn 6-7 rats (same size and behavior as Wave 3)
+                    // Spawn 6-7 rats (varied like Wave 3)
                     for (let i = 0; i < 7; i++) {
-                        const speed = -1.5 - Math.random() * 1.5;
-                        const jumpChance = Math.random() < 0.6;
+                        const speedType = Math.random();
+                        let speed, jumpPower, jumpFrequency;
+                        
+                        if (speedType < 0.2) {
+                            speed = -0.8;
+                            jumpPower = 0;
+                            jumpFrequency = 0;
+                        } else if (speedType < 0.4) {
+                            speed = -1.2;
+                            jumpPower = -5;
+                            jumpFrequency = 80 + Math.random() * 40;
+                        } else if (speedType < 0.7) {
+                            speed = -2;
+                            jumpPower = -8;
+                            jumpFrequency = 50 + Math.random() * 30;
+                        } else {
+                            speed = -3.5;
+                            jumpPower = -12;
+                            jumpFrequency = 30 + Math.random() * 20;
+                        }
                         
                         enemies.push({
                             type: 'rat',
@@ -1481,8 +1580,10 @@
                             health: 1,
                             animFrame: 0,
                             animTimer: 0,
-                            canJump: jumpChance,
-                            jumpTimer: Math.random() * 60 + 30,
+                            canJump: jumpPower !== 0,
+                            jumpPower: jumpPower,
+                            jumpTimer: jumpFrequency,
+                            jumpFrequency: jumpFrequency,
                             onGround: true,
                             points: 1
                         });
@@ -1523,7 +1624,7 @@
                 const dx = p.x - (player.x + player.width / 2);
                 const dy = p.y - (player.y + player.height / 2);
                 if (Math.sqrt(dx * dx + dy * dy) < p.radius + 10) {
-                    player.health -= 2;
+                    player.health -= p.damage;
                     playSound('chipHit', 0.4);
                     enemyProjectiles.splice(i, 1);
                     continue;
@@ -1663,18 +1764,45 @@
 
             // Draw projectiles
             projectiles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = 0.8; // Translucent
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = p.isCharged ? '#ffff00' : '#00ffff';
                 ctx.fillStyle = p.isCharged ? '#ffff00' : '#00ffff';
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.restore();
             });
 
             // Draw enemy projectiles
             enemyProjectiles.forEach(p => {
-                ctx.fillStyle = '#00ff00';
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fill();
+                if (p.radius === 2) {
+                    // Small raindrops - simple circles
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Brayn's globs - misshapen
+                    ctx.fillStyle = '#00ff00';
+                    ctx.beginPath();
+                    // Create irregular blob shape
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * Math.PI * 2;
+                        const variation = 0.7 + Math.sin(Date.now() / 100 + i) * 0.3;
+                        const radius = p.radius * variation;
+                        const x = p.x + Math.cos(angle) * radius;
+                        const y = p.y + Math.sin(angle) * radius;
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
             });
 
             // Draw HUD
@@ -1798,6 +1926,15 @@
             `;
             
             document.getElementById('endStats').innerHTML = statsHTML;
+            
+            // Show/hide tips based on win/loss
+            const tipsElement = document.getElementById('endTips');
+            if (isVictory) {
+                tipsElement.style.display = 'none';
+            } else {
+                tipsElement.style.display = 'block';
+            }
+            
             document.getElementById('endScreen').classList.add('active');
         }
 
