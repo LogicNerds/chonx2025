@@ -341,9 +341,11 @@
         }
 
         #endScreen .stats {
-            font-size: 12px;
+            font-size: 10px;
             line-height: 2;
             margin-bottom: 40px;
+            text-align: left;
+            max-width: 300px;
         }
 
         .end-buttons {
@@ -484,10 +486,10 @@
 
     <!-- End Screen -->
     <div id="endScreen">
-        <h1>THE FEED IS STABLE<br>(FOR NOW)</h1>
+        <h1 id="endTitle">THE FEED IS STABLE<br>(FOR NOW)</h1>
         <div class="stats" id="endStats"></div>
         <div class="end-buttons">
-            <button id="refreshButton">REFRESH</button>
+            <button id="refreshButton">REMATCH</button>
             <button id="meetCastButton">MEET THE CAST</button>
         </div>
     </div>
@@ -1197,7 +1199,7 @@
                 player.velocityY = 0;
                 player.isGrounded = true;
                 player.isJumping = false;
-                player.jetpackActive = false; // Deactivate jetpack on landing
+                // Don't auto-deactivate jetpack - player controls it
             } else {
                 player.isGrounded = false;
             }
@@ -1251,7 +1253,7 @@
 
             // Check for game over
             if (player.health <= 0) {
-                endGame();
+                endGame(false); // LOSS
             }
         }
 
@@ -1506,7 +1508,7 @@
                     
                     if (boss.health <= 0) {
                         boss = null;
-                        endGame();
+                        endGame(true); // WIN
                     }
                 }
             }
@@ -1777,10 +1779,18 @@
         // ===============================================
         // GAME END
         // ===============================================
-        function endGame() {
+        function endGame(isVictory) {
             gameState = 'ended';
             
             const playTime = Math.floor((Date.now() - stats.startTime) / 1000);
+            
+            // Set title based on win/loss
+            const titleElement = document.getElementById('endTitle');
+            if (isVictory) {
+                titleElement.innerHTML = 'MAIN CHARACTER<br>ENERGY!';
+            } else {
+                titleElement.innerHTML = 'YOU FAILED! 🙄';
+            }
             
             const statsHTML = `
                 <p>Enemies Neutralized: ${stats.enemiesKilled}</p>
