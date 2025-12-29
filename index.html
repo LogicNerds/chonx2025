@@ -18,7 +18,7 @@
         }
 
         body {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Press Start 2P';
             background: #000;
             overflow: hidden;
             touch-action: none;
@@ -146,7 +146,7 @@
             color: #666;
             border-top: 2px solid #00ff00;
             z-index: 2;
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Press Start 2P';
         }
 
         #legalFooter p {
@@ -345,7 +345,7 @@
         }
 
         #refreshButton {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Press Start 2P';
             font-size: 14px;
             padding: 15px 30px;
             background: #00ff00;
@@ -1069,6 +1069,7 @@
             // Check wave completion
             if (currentWave === 1 && score >= 67 && !jetpackUnlocked) {
                 jetpackUnlocked = true;
+                player.jetpackEnergy = 100; // Full energy when unlocked
                 startWave(2);
             } else if (currentWave === 2 && waveEnemiesSpawned >= waveEnemiesTotal && enemies.length === 0) {
                 // Wave 2 complete when all enemies spawned and all killed/escaped
@@ -1256,20 +1257,34 @@
                 boss.ratSpawnTimer++;
                 if (boss.ratSpawnTimer >= 180) {
                     boss.ratSpawnTimer = 0;
-                    // Spawn 6-7 rats
+                    // Spawn 6-7 rats (same size and behavior as Wave 3)
                     for (let i = 0; i < 7; i++) {
+                        const speed = -1.5 - Math.random() * 1.5;
+                        const jumpChance = Math.random() < 0.6;
+                        
                         enemies.push({
                             type: 'rat',
-                            x: BASE_WIDTH + 50 + i * 30,
-                            y: GROUND_Y - 20,
-                            width: 20,
-                            height: 20,
-                            velocityX: -2,
+                            x: BASE_WIDTH + 50 + i * 50,
+                            y: GROUND_Y - 40,
+                            width: 40,
+                            height: 40,
+                            velocityX: speed,
                             velocityY: 0,
                             health: 1,
                             animFrame: 0,
-                            animTimer: 0
+                            animTimer: 0,
+                            canJump: jumpChance,
+                            jumpTimer: Math.random() * 60 + 30,
+                            onGround: true,
+                            points: 1
                         });
+                    }
+                    
+                    // Start rat chant when boss spawns rats
+                    if (!ratChantPlaying && sounds.ratsSixSeven) {
+                        sounds.ratsSixSeven.currentTime = 0;
+                        sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                        ratChantPlaying = true;
                     }
                 }
             }
