@@ -662,7 +662,8 @@
         const ASSETS = {
             images: {
                 background: ASSET_BASE_URL + "assets/background.jpg",
-                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png"
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
+                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
             },
             sprites: {
                 chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
@@ -828,6 +829,19 @@
                 checkAssetsLoaded(callback);
             };
             sprites.background.src = ASSETS.images.background;
+
+            // Load Neon Bread logo
+            sprites.neonBreadLogo = new Image();
+            sprites.neonBreadLogo.onload = () => {
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.onerror = () => {
+                console.log('Neon Bread logo failed to load');
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
 
             Object.keys(ASSETS.sprites).forEach(key => {
                 sprites[key] = new Image();
@@ -2173,6 +2187,24 @@
                     ctx.fill();
                 }
             });
+
+            // Draw Neon Bread logo (bottom right of play arena, 65% opacity)
+            if (sprites.neonBreadLogo && sprites.neonBreadLogo.complete) {
+                ctx.save();
+                ctx.globalAlpha = 0.65;
+                const logoWidth = 45;
+                const logoHeight = (sprites.neonBreadLogo.height / sprites.neonBreadLogo.width) * logoWidth;
+                const logoX = 467 - logoWidth - 10; // Right edge of play arena (before right control panel)
+                const logoY = BASE_HEIGHT - logoHeight - 10;
+                ctx.drawImage(
+                    sprites.neonBreadLogo,
+                    logoX,
+                    logoY,
+                    logoWidth,
+                    logoHeight
+                );
+                ctx.restore();
+            }
 
             drawHUD();
         }
