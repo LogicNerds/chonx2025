@@ -1396,7 +1396,7 @@
             spawnTimer++;
             
             let spawnRate = 60;
-            if (currentWave === 2) spawnRate = 45;
+            if (currentWave === 2) spawnRate = 90; // Slower - was 45
             if (currentWave === 3) spawnRate = 20;
 
             if (spawnTimer >= spawnRate) {
@@ -1494,31 +1494,31 @@
                 }
                 
                 // Spawn type: ALL heights - top, middle, bottom, everywhere
-                // Spawn FURTHER right so they're visible before hitting ground (account for control panels)
+                // Spawn just off right edge of visible arena (~500-550px) so immediately visible
                 const spawnType = Math.random();
                 let spawnX, spawnY, initialVelocityY, onGround;
                 
                 if (spawnType < 0.25) {
                     // Ground spawn (25% - reduced)
-                    spawnX = BASE_WIDTH + 250; // Much further right
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 50; // ~517-567px
                     spawnY = GROUND_Y - 40;
                     initialVelocityY = 0;
                     onGround = true;
                 } else if (spawnType < 0.5) {
                     // Drop from ceiling (25%)
-                    spawnX = BASE_WIDTH + 200 + Math.random() * 200; // Far right
+                    spawnX = BASE_WIDTH - 200 + Math.random() * 100; // ~467-567px
                     spawnY = HUD_HEIGHT + 10; // Right below HUD
                     initialVelocityY = 0;
                     onGround = false;
                 } else if (spawnType < 0.75) {
                     // Mid-air spawn - high (25%)
-                    spawnX = BASE_WIDTH + 200 + Math.random() * 150;
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 80; // ~517-597px
                     spawnY = HUD_HEIGHT + 60 + Math.random() * 80; // Upper third
                     initialVelocityY = Math.random() * 2; // Slight downward
                     onGround = false;
                 } else {
                     // Mid-air spawn - middle (25%)
-                    spawnX = BASE_WIDTH + 200 + Math.random() * 150;
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 80; // ~517-597px
                     spawnY = HUD_HEIGHT + 140 + Math.random() * 80; // Middle third
                     initialVelocityY = Math.random() * 3; // Falling
                     onGround = false;
@@ -1905,30 +1905,30 @@
                         }
                         
                         // Varied spawn types - ALL heights
-                        // Spawn further right so visible before hitting ground
+                        // Spawn just off right edge of visible arena
                         const spawnType = Math.random();
                         let spawnX, spawnY, initialVelocityY, onGround;
                         
                         if (spawnType < 0.25) {
-                            spawnX = BASE_WIDTH + 250 + i * 30;
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 50;
                             spawnY = GROUND_Y - 40;
                             initialVelocityY = 0;
                             onGround = true;
                         } else if (spawnType < 0.5) {
                             // Drop from ceiling
-                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 200;
+                            spawnX = BASE_WIDTH - 200 + i * 20 + Math.random() * 100;
                             spawnY = HUD_HEIGHT + 10;
                             initialVelocityY = 0;
                             onGround = false;
                         } else if (spawnType < 0.75) {
                             // Mid-air high
-                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 150;
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 80;
                             spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
                             initialVelocityY = Math.random() * 2;
                             onGround = false;
                         } else {
                             // Mid-air middle
-                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 150;
+                            spawnX = BASE_WIDTH - 150 + i * 20 + Math.random() * 80;
                             spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
                             initialVelocityY = Math.random() * 3;
                             onGround = false;
