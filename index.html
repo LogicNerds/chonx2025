@@ -662,8 +662,7 @@
         const ASSETS = {
             images: {
                 background: ASSET_BASE_URL + "assets/background.jpg",
-                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
-                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png"
             },
             sprites: {
                 chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
@@ -841,7 +840,7 @@
                 imagesLoaded++;
                 checkAssetsLoaded(callback);
             };
-            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
+            sprites.neonBreadLogo.src = ASSET_BASE_URL + "assets/NeonBread Blue on clear.png";
 
             Object.keys(ASSETS.sprites).forEach(key => {
                 sprites[key] = new Image();
