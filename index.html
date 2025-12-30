@@ -8,6 +8,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
+        /* Force iframe compatibility */
+        html, body {
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: hidden !important;
+        }
+
+        #leftControls, #rightControls {
+            position: absolute !important; /* Change from fixed to absolute */
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -2194,7 +2205,7 @@
                 ctx.globalAlpha = 0.65;
                 const logoWidth = 45;
                 const logoHeight = (sprites.neonBreadLogo.height / sprites.neonBreadLogo.width) * logoWidth;
-                const logoX = 467 - logoWidth - 0; // Right edge of play arena (before right control panel)
+                const logoX = 467 - logoWidth - 10; // Right edge of play arena (before right control panel)
                 const logoY = BASE_HEIGHT - logoHeight - 10;
                 ctx.drawImage(
                     sprites.neonBreadLogo,
