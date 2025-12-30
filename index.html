@@ -1429,42 +1429,42 @@
                     points: 4
                 });
             } else if (currentWave === 2) {
-                // Spawn BOTH enemy types simultaneously - force immediate decision-making
-                
-                // Always spawn a Turdal
-                enemies.push({
-                    type: 'turdal',
-                    x: BASE_WIDTH + 50,
-                    y: GROUND_Y - 55,
-                    width: 55,
-                    height: 55,
-                    velocityX: -1.5,
-                    velocityY: 0,
-                    health: 3,
-                    shootTimer: Math.random() * 60 + 60,
-                    shootCooldown: 120,
-                    points: 2
-                });
-                
-                // Also spawn a Cloud Twerker at the same time
-                const minY = HUD_HEIGHT + 60;
-                const maxY = GROUND_Y - 120;
-                const spawnY = minY + Math.random() * (maxY - minY);
-                
-                enemies.push({
-                    type: 'cloudTwerker',
-                    x: BASE_WIDTH + 50 + Math.random() * 100, // Slight X variation
-                    y: spawnY,
-                    baseY: spawnY,
-                    width: 40,
-                    height: 40,
-                    velocityX: -0.8,
-                    velocityY: 0,
-                    health: 2,
-                    floatPhase: Math.random() * Math.PI * 2,
-                    dropTimer: Math.random() * 90 + 60,
-                    points: 2
-                });
+                // Alternate between Turdal and Cloud Twerker (not both at once)
+                if (Math.random() < 0.5) {
+                    enemies.push({
+                        type: 'turdal',
+                        x: BASE_WIDTH + 50,
+                        y: GROUND_Y - 55,
+                        width: 55,
+                        height: 55,
+                        velocityX: -1.5,
+                        velocityY: 0,
+                        health: 3,
+                        shootTimer: Math.random() * 60 + 60,
+                        shootCooldown: 120,
+                        points: 2
+                    });
+                } else {
+                    // Cloud Twerker - floating acid dropper
+                    const minY = HUD_HEIGHT + 60;
+                    const maxY = GROUND_Y - 120;
+                    const spawnY = minY + Math.random() * (maxY - minY);
+                    
+                    enemies.push({
+                        type: 'cloudTwerker',
+                        x: BASE_WIDTH + 50,
+                        y: spawnY,
+                        baseY: spawnY,
+                        width: 40,
+                        height: 40,
+                        velocityX: -0.8,
+                        velocityY: 0,
+                        health: 2,
+                        floatPhase: Math.random() * Math.PI * 2,
+                        dropTimer: Math.random() * 90 + 60,
+                        points: 2
+                    });
+                }
             } else if (currentWave === 3) {
                 const speedType = Math.random();
                 let speed, jumpPower, jumpFrequency;
@@ -1494,30 +1494,31 @@
                 }
                 
                 // Spawn type: ALL heights - top, middle, bottom, everywhere
+                // Spawn FURTHER right so they're visible before hitting ground (account for control panels)
                 const spawnType = Math.random();
                 let spawnX, spawnY, initialVelocityY, onGround;
                 
                 if (spawnType < 0.25) {
                     // Ground spawn (25% - reduced)
-                    spawnX = BASE_WIDTH + 50;
+                    spawnX = BASE_WIDTH + 250; // Much further right
                     spawnY = GROUND_Y - 40;
                     initialVelocityY = 0;
                     onGround = true;
                 } else if (spawnType < 0.5) {
                     // Drop from ceiling (25%)
-                    spawnX = BASE_WIDTH + 50 + Math.random() * 200;
+                    spawnX = BASE_WIDTH + 200 + Math.random() * 200; // Far right
                     spawnY = HUD_HEIGHT + 10; // Right below HUD
                     initialVelocityY = 0;
                     onGround = false;
                 } else if (spawnType < 0.75) {
                     // Mid-air spawn - high (25%)
-                    spawnX = BASE_WIDTH + 50 + Math.random() * 150;
+                    spawnX = BASE_WIDTH + 200 + Math.random() * 150;
                     spawnY = HUD_HEIGHT + 60 + Math.random() * 80; // Upper third
                     initialVelocityY = Math.random() * 2; // Slight downward
                     onGround = false;
                 } else {
                     // Mid-air spawn - middle (25%)
-                    spawnX = BASE_WIDTH + 50 + Math.random() * 150;
+                    spawnX = BASE_WIDTH + 200 + Math.random() * 150;
                     spawnY = HUD_HEIGHT + 140 + Math.random() * 80; // Middle third
                     initialVelocityY = Math.random() * 3; // Falling
                     onGround = false;
@@ -1904,29 +1905,30 @@
                         }
                         
                         // Varied spawn types - ALL heights
+                        // Spawn further right so visible before hitting ground
                         const spawnType = Math.random();
                         let spawnX, spawnY, initialVelocityY, onGround;
                         
                         if (spawnType < 0.25) {
-                            spawnX = BASE_WIDTH + 50 + i * 30;
+                            spawnX = BASE_WIDTH + 250 + i * 30;
                             spawnY = GROUND_Y - 40;
                             initialVelocityY = 0;
                             onGround = true;
                         } else if (spawnType < 0.5) {
                             // Drop from ceiling
-                            spawnX = BASE_WIDTH + 50 + i * 30 + Math.random() * 200;
+                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 200;
                             spawnY = HUD_HEIGHT + 10;
                             initialVelocityY = 0;
                             onGround = false;
                         } else if (spawnType < 0.75) {
                             // Mid-air high
-                            spawnX = BASE_WIDTH + 50 + i * 30 + Math.random() * 150;
+                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 150;
                             spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
                             initialVelocityY = Math.random() * 2;
                             onGround = false;
                         } else {
                             // Mid-air middle
-                            spawnX = BASE_WIDTH + 50 + i * 30 + Math.random() * 150;
+                            spawnX = BASE_WIDTH + 200 + i * 30 + Math.random() * 150;
                             spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
                             initialVelocityY = Math.random() * 3;
                             onGround = false;
