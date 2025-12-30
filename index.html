@@ -662,7 +662,8 @@
         const ASSETS = {
             images: {
                 background: ASSET_BASE_URL + "assets/background.jpg",
-                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png"
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
+                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
             },
             sprites: {
                 chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
@@ -840,7 +841,7 @@
                 imagesLoaded++;
                 checkAssetsLoaded(callback);
             };
-            sprites.neonBreadLogo.src = ASSET_BASE_URL + "assets/NeonBread Blue on clear.png";
+            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
 
             Object.keys(ASSETS.sprites).forEach(key => {
                 sprites[key] = new Image();
@@ -2522,7 +2523,7 @@
         document.getElementById('castBrayn').src = ASSETS.sprites.braynStand;
         
         document.getElementById('startButton').addEventListener('click', () => {
-            document.getElementById('startButton').textContent = 'Loading...';
+            document.getElementById('startButton').textContent = 'chonking...';
             initAudioContext();
             
             loadAssets(() => {
