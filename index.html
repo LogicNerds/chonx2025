@@ -1164,7 +1164,7 @@
                 shootProjectileAtAngle(angle, false);
             });
 
-            // Fire Dial - 16-direction snap-to-angle shooting
+            // Fire Dial - 16-direction snap-to-angle shooting with hold-to-charge
             const fireDial = document.getElementById('fireDial');
             
             // Define 16 directions (in radians, 0 = right, counter-clockwise)
@@ -1210,10 +1210,25 @@
                 return closestAngle;
             }
             
-            function handleDialShoot(e) {
+            let dialCharging = false;
+            let dialChargeStart = 0;
+            let dialChargeAngle = 0;
+            let chargeEnergyDrainInterval = null;
+            
+            function handleDialStart(e) {
                 e.preventDefault();
                 
-                // Get tap position relative to dial center
+                // Can't charge without jetpack energy
+                if (!jetpackUnlocked || player.jetpackEnergy <= 0) {
+                    // Fire instant shot instead
+                    handleDialInstantShoot(e);
+                    return;
+                }
+                
+                dialCharging = true;
+                dialChargeStart = Date.now();
+                
+                // Get tap position and calculate angle
                 const rect = fireDial.getBoundingClientRect();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1224,17 +1239,108 @@
                 const dx = clientX - centerX;
                 const dy = clientY - centerY;
                 
-                // Calculate raw angle
                 const rawAngle = Math.atan2(dy, dx);
+                dialChargeAngle = snapToNearest16(rawAngle);
                 
-                // Snap to nearest 16-direction
+                // Play charge sound
+                playSound('chipCharge', 0.2);
+                
+                // Start draining jetpack energy while charging
+                chargeEnergyDrainInterval = setInterval(() => {
+                    if (player.jetpackEnergy > 0) {
+                        player.jetpackEnergy -= 0.25; // ~15 energy per second
+                        if (player.jetpackEnergy < 0) player.jetpackEnergy = 0;
+                    } else {
+                        // Energy depleted, stop charging
+                        if (dialCharging) {
+                            handleDialEnd(e);
+                        }
+                    }
+                }, 1000 / 60); // Every frame
+            }
+            
+            function handleDialEnd(e) {
+                e.preventDefault();
+                if (!dialCharging) return;
+                
+                dialCharging = false;
+                if (sounds.chipCharge) sounds.chipCharge.pause();
+                
+                // Stop energy drain
+                if (chargeEnergyDrainInterval) {
+                    clearInterval(chargeEnergyDrainInterval);
+                    chargeEnergyDrainInterval = null;
+                }
+                
+                const chargeDuration = (Date.now() - dialChargeStart) / 1000;
+                
+                // Calculate damage based on charge time
+                let damage = 1;
+                let isCharged = false;
+                let radius = 4;
+                
+                if (chargeDuration < 0.3) {
+                    damage = 1;
+                } else if (chargeDuration < 0.6) {
+                    damage = 2;
+                    isCharged = true;
+                    radius = 6;
+                    stats.chargeShotsUsed++;
+                } else {
+                    damage = 3;
+                    isCharged = true;
+                    radius = 8;
+                    stats.chargeShotsUsed++;
+                }
+                
+                // Fire charged shot
+                const speed = 8;
+                
+                projectiles.push({
+                    x: player.x + player.width / 2,
+                    y: player.y + player.height / 2,
+                    velocityX: Math.cos(dialChargeAngle) * speed,
+                    velocityY: Math.sin(dialChargeAngle) * speed,
+                    damage: damage,
+                    radius: radius,
+                    isCharged: isCharged
+                });
+                
+                playSound('chipShoot', 0.3);
+            }
+            
+            function handleDialInstantShoot(e) {
+                e.preventDefault();
+                
+                // Get tap position and calculate angle
+                const rect = fireDial.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const dx = clientX - centerX;
+                const dy = clientY - centerY;
+                
+                const rawAngle = Math.atan2(dy, dx);
                 const snappedAngle = snapToNearest16(rawAngle);
                 
                 shootProjectileAtAngle(snappedAngle, false);
             }
             
-            fireDial.addEventListener('touchstart', handleDialShoot);
-            fireDial.addEventListener('click', handleDialShoot);
+            fireDial.addEventListener('touchstart', handleDialStart);
+            fireDial.addEventListener('mousedown', handleDialStart);
+            fireDial.addEventListener('touchend', handleDialEnd);
+            fireDial.addEventListener('mouseup', handleDialEnd);
+            fireDial.addEventListener('touchcancel', handleDialEnd);
+            
+            // Handle quick tap (no charge)
+            fireDial.addEventListener('click', (e) => {
+                if (!dialCharging) {
+                    handleDialInstantShoot(e);
+                }
+            });
         }
 
         function shootProjectileAtAngle(angle, isCharged) {
