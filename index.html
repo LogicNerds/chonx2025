@@ -798,38 +798,7 @@
                 keys.up = gamepadState.dpadUp || gamepadState.leftStickY < -0.2;
                 keys.down = gamepadState.dpadDown || gamepadState.leftStickY > 0.2;
 
-                // Right stick shooting
-                if (Math.abs(gamepadState.rightStickX) > 0.3 || Math.abs(gamepadState.rightStickY) > 0.3) {
-                    const angle = Math.atan2(gamepadState.rightStickY, gamepadState.rightStickX);
-                    if (!gamepadLastShot || Date.now() - gamepadLastShot > 200) {
-                        shootProjectileAtAngle(angle, false);
-                        gamepadLastShot = Date.now();
-                    }
-                }
-
-                // Right trigger for charged shot
-                if (gamepadState.triggerR && !gamepadCharging) {
-                    gamepadCharging = true;
-                    gamepadChargeStart = Date.now();
-                    playSound('chipCharge', 0.2);
-                } else if (!gamepadState.triggerR && gamepadCharging) {
-                    gamepadCharging = false;
-                    if (sounds.chipCharge) sounds.chipCharge.pause();
-                    
-                    const chargeDuration = (Date.now() - gamepadChargeStart) / 1000;
-                    const isCharged = chargeDuration > 0.3;
-                    
-                    if (isCharged) {
-                        stats.chargeShotsUsed++;
-                    }
-                    
-                    // Shoot forward if no right stick input
-                    const angle = Math.abs(gamepadState.rightStickX) > 0.3 || Math.abs(gamepadState.rightStickY) > 0.3
-                        ? Math.atan2(gamepadState.rightStickY, gamepadState.rightStickX)
-                        : 0; // Default to right
-                    
-                    shootProjectileAtAngle(angle, isCharged);
-                }
+                // Gamepad shooting removed - only fire dial controls shooting
             }
         }
 
@@ -1147,22 +1116,7 @@
             });
 
             // Mouse click for shooting
-            canvas.addEventListener('click', (e) => {
-                if (gameState !== 'playing') return;
-                
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                
-                const clickX = (e.clientX - rect.left) * scaleX;
-                const clickY = (e.clientY - rect.top) * scaleY;
-                
-                const dx = clickX - (player.x + player.width / 2);
-                const dy = clickY - (player.y + player.height / 2);
-                const angle = Math.atan2(dy, dx);
-                
-                shootProjectileAtAngle(angle, false);
-            });
+            // Canvas click removed - only fire dial controls shooting
 
             // Fire Dial - 16-direction snap-to-angle shooting with hold-to-charge
             const fireDial = document.getElementById('fireDial');
