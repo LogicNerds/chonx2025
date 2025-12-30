@@ -662,7 +662,8 @@
         const ASSETS = {
             images: {
                 background: ASSET_BASE_URL + "assets/background.jpg",
-                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png"
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
+                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
             },
             sprites: {
                 chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
@@ -2173,6 +2174,22 @@
                     ctx.fill();
                 }
             });
+
+            // Draw Neon Bread logo (bottom right, 50% opacity)
+            if (images.neonBreadLogo && images.neonBreadLogo.complete) {
+                ctx.save();
+                ctx.globalAlpha = 0.5;
+                const logoWidth = 60;
+                const logoHeight = (images.neonBreadLogo.height / images.neonBreadLogo.width) * logoWidth;
+                ctx.drawImage(
+                    images.neonBreadLogo,
+                    BASE_WIDTH - logoWidth - 10,
+                    BASE_HEIGHT - logoHeight - 10,
+                    logoWidth,
+                    logoHeight
+                );
+                ctx.restore();
+            }
 
             drawHUD();
         }
