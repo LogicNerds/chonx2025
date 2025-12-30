@@ -1374,6 +1374,67 @@
                 waveEnemiesTotal = 40;
             } else if (waveNum === 3) {
                 waveEnemiesTotal = 67;
+                
+                // INITIAL RAT RUSH - spawn 12 rats immediately (mostly fast, all heights)
+                for (let i = 0; i < 12; i++) {
+                    const speedType = Math.random();
+                    let speed;
+                    
+                    // 80% fast rats in initial rush
+                    if (speedType < 0.2) {
+                        speed = -2; // Some medium
+                    } else if (speedType < 0.6) {
+                        speed = -3.75; // Fast
+                    } else {
+                        speed = -6; // Very fast
+                    }
+                    
+                    // All heights evenly distributed
+                    const heightType = Math.random();
+                    let spawnY, initialVelocityY;
+                    
+                    if (heightType < 0.33) {
+                        // Top third
+                        spawnY = HUD_HEIGHT + 10 + Math.random() * 80;
+                        initialVelocityY = 0;
+                    } else if (heightType < 0.66) {
+                        // Middle third
+                        spawnY = HUD_HEIGHT + 90 + Math.random() * 80;
+                        initialVelocityY = Math.random() * 2;
+                    } else {
+                        // Bottom third / ground
+                        spawnY = HUD_HEIGHT + 170 + Math.random() * 60;
+                        initialVelocityY = Math.random() * 3;
+                    }
+                    
+                    enemies.push({
+                        type: 'rat',
+                        x: BASE_WIDTH - 100 + i * 40, // Staggered across screen
+                        y: spawnY,
+                        width: 40,
+                        height: 40,
+                        velocityX: speed,
+                        velocityY: initialVelocityY,
+                        health: 1,
+                        animFrame: 0,
+                        animTimer: 0,
+                        canJump: true,
+                        jumpPower: -8,
+                        jumpTimer: 50,
+                        jumpFrequency: 50,
+                        onGround: false,
+                        points: 1
+                    });
+                    
+                    waveEnemiesSpawned++;
+                }
+                
+                // Start rat chant
+                if (sounds.ratsSixSeven) {
+                    sounds.ratsSixSeven.currentTime = 0;
+                    sounds.ratsSixSeven.play().catch(e => console.log('Rat chant blocked'));
+                    ratChantPlaying = true;
+                }
             } else if (waveNum === 4) {
                 spawnBoss();
             }
@@ -1396,7 +1457,7 @@
             spawnTimer++;
             
             let spawnRate = 60;
-            if (currentWave === 2) spawnRate = 90; // Slower - was 45
+            if (currentWave === 2) spawnRate = 60; // Faster pacing
             if (currentWave === 3) spawnRate = 20;
 
             if (spawnTimer >= spawnRate) {
@@ -1429,8 +1490,9 @@
                     points: 4
                 });
             } else if (currentWave === 2) {
-                // Alternate between Turdal and Cloud Twerker (not both at once)
-                if (Math.random() < 0.5) {
+                // 70% Cloud Twerkers (aerial), 30% Turdals (ground)
+                if (Math.random() < 0.3) {
+                    // Turdal - occasional ground threat
                     enemies.push({
                         type: 'turdal',
                         x: BASE_WIDTH + 50,
@@ -1445,7 +1507,7 @@
                         points: 2
                     });
                 } else {
-                    // Cloud Twerker - floating acid dropper
+                    // Cloud Twerker - majority aerial threat
                     const minY = HUD_HEIGHT + 60;
                     const maxY = GROUND_Y - 120;
                     const spawnY = minY + Math.random() * (maxY - minY);
