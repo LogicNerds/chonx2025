@@ -166,12 +166,13 @@
             border-right: 3px solid #00ff00;
             z-index: 50;
             display: none;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 30px;
         }
 
         #leftControls.active {
             display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         /* Right Control Panel */
@@ -227,13 +228,13 @@
         #btnUp { left: 46px; top: 0; }
         #btnDown { left: 46px; bottom: 0; }
 
-        /* Fire Dial - Sleek 16-Direction Snap - Bottom Right */
+        /* Fire Dial - Sleek 16-Direction Snap - Bottom Right (aligned with d-pad) */
         #fireDial {
             position: absolute;
-            right: 35px;
+            right: 25px;
             bottom: 30px;
-            width: 110px;
-            height: 110px;
+            width: 137px;
+            height: 137px;
             background: 
                 radial-gradient(circle at center, 
                     rgba(0, 0, 0, 0.9) 0%, 
@@ -250,7 +251,6 @@
             cursor: crosshair;
             user-select: none;
             touch-action: none;
-            position: relative;
             overflow: hidden;
         }
 
@@ -316,22 +316,14 @@
                 0 0 30px #ffff00;
         }
 
-        .action-buttons {
-            position: absolute;
-            right: 35px;
-            top: 30px;
-            width: 110px;
-            height: 110px;
-        }
-
         .action-btn {
             position: absolute;
-            width: 50px;
-            height: 50px;
+            width: 70px;
+            height: 60px;
             background: #000;
             border: 3px solid #ff00ff;
             color: #ff00ff;
-            font-size: 8px;
+            font-size: 10px;
             font-family: 'Press Start 2P';
             display: flex;
             align-items: center;
@@ -342,6 +334,8 @@
             box-shadow: inset 0 0 10px #ff00ff, 0 0 10px #ff00ff;
             z-index: 100;
             cursor: pointer;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .action-btn:active {
@@ -351,13 +345,11 @@
         }
 
         #btnJetpack {
-            top: 0;
-            right: 0;
+            top: 30px;
         }
 
         #btnJump {
-            bottom: 0;
-            right: 0;
+            top: 100px;
         }
 
         /* End Screen */
@@ -591,10 +583,8 @@
     <!-- Right Control Panel -->
     <div id="rightControls">
         <div id="fireDial"></div>
-        <div class="action-buttons">
-            <div class="action-btn" id="btnJetpack">JET</div>
-            <div class="action-btn" id="btnJump">JUMP</div>
-        </div>
+        <div class="action-btn" id="btnJetpack">JET</div>
+        <div class="action-btn" id="btnJump">JUMP</div>
     </div>
 
     <!-- End Screen -->
