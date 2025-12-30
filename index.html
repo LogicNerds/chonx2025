@@ -1185,29 +1185,10 @@
                 // Get tap position and calculate angle
                 const rect = fireDial.getBoundingClientRect();
                 
-                // MULTI-TOUCH FIX: Find the touch that's actually inside the dial bounds
-                let clientX, clientY;
-                if (e.touches) {
-                    let foundTouch = false;
-                    for (let i = 0; i < e.touches.length; i++) {
-                        const touch = e.touches[i];
-                        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                            clientX = touch.clientX;
-                            clientY = touch.clientY;
-                            foundTouch = true;
-                            break;
-                        }
-                    }
-                    if (!foundTouch) {
-                        // No touch inside dial bounds, use first touch as fallback
-                        clientX = e.touches[0].clientX;
-                        clientY = e.touches[0].clientY;
-                    }
-                } else {
-                    clientX = e.clientX;
-                    clientY = e.clientY;
-                }
+                // Use targetTouches - only touches on the dial element
+                const touch = e.targetTouches ? e.targetTouches[0] : e;
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
                 
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
@@ -1291,29 +1272,10 @@
                 // Get tap position and calculate angle
                 const rect = fireDial.getBoundingClientRect();
                 
-                // MULTI-TOUCH FIX: Find the touch that's actually inside the dial bounds
-                let clientX, clientY;
-                if (e.touches) {
-                    let foundTouch = false;
-                    for (let i = 0; i < e.touches.length; i++) {
-                        const touch = e.touches[i];
-                        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                            clientX = touch.clientX;
-                            clientY = touch.clientY;
-                            foundTouch = true;
-                            break;
-                        }
-                    }
-                    if (!foundTouch) {
-                        // No touch inside dial bounds, use first touch as fallback
-                        clientX = e.touches[0].clientX;
-                        clientY = e.touches[0].clientY;
-                    }
-                } else {
-                    clientX = e.clientX;
-                    clientY = e.clientY;
-                }
+                // Use targetTouches - only touches on the dial element
+                const touch = e.targetTouches ? e.targetTouches[0] : e;
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
                 
                 const centerX = rect.left + rect.width / 2;
                 const centerY = rect.top + rect.height / 2;
