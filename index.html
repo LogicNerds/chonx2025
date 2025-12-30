@@ -1239,20 +1239,7 @@
                 const dx = clientX - centerX;
                 const dy = clientY - centerY;
                 
-                let rawAngle = Math.atan2(dy, dx);
-                
-                // If player is moving and tap is on same side as movement, favor forward shooting
-                if (keys.right && dx > 0) {
-                    // Moving right, tapped right side - bias toward right hemisphere
-                    if (rawAngle > Math.PI / 2) rawAngle = Math.PI / 2;
-                    if (rawAngle < -Math.PI / 2) rawAngle = -Math.PI / 2;
-                } else if (keys.left && dx < 0) {
-                    // Moving left, tapped left side - bias toward left hemisphere  
-                    if (rawAngle < Math.PI / 2 && rawAngle > -Math.PI / 2) {
-                        rawAngle = rawAngle > 0 ? Math.PI / 2 : -Math.PI / 2;
-                    }
-                }
-                
+                const rawAngle = Math.atan2(dy, dx);
                 dialChargeAngle = snapToNearest16(rawAngle);
                 
                 // Play charge sound
@@ -1336,20 +1323,7 @@
                 const dx = clientX - centerX;
                 const dy = clientY - centerY;
                 
-                let rawAngle = Math.atan2(dy, dx);
-                
-                // If player is moving and tap is on same side as movement, favor forward shooting
-                if (keys.right && dx > 0) {
-                    // Moving right, tapped right side - bias toward right hemisphere
-                    if (rawAngle > Math.PI / 2) rawAngle = Math.PI / 2;
-                    if (rawAngle < -Math.PI / 2) rawAngle = -Math.PI / 2;
-                } else if (keys.left && dx < 0) {
-                    // Moving left, tapped left side - bias toward left hemisphere
-                    if (rawAngle < Math.PI / 2 && rawAngle > -Math.PI / 2) {
-                        rawAngle = rawAngle > 0 ? Math.PI / 2 : -Math.PI / 2;
-                    }
-                }
-                
+                const rawAngle = Math.atan2(dy, dx);
                 const snappedAngle = snapToNearest16(rawAngle);
                 
                 shootProjectileAtAngle(snappedAngle, false);
@@ -1360,13 +1334,6 @@
             fireDial.addEventListener('touchend', handleDialEnd);
             fireDial.addEventListener('mouseup', handleDialEnd);
             fireDial.addEventListener('touchcancel', handleDialEnd);
-            
-            // Handle quick tap (no charge)
-            fireDial.addEventListener('click', (e) => {
-                if (!dialCharging) {
-                    handleDialInstantShoot(e);
-                }
-            });
         }
 
         function shootProjectileAtAngle(angle, isCharged) {
@@ -1432,13 +1399,13 @@
                         spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
                         spawnY = HUD_HEIGHT + 10;
                         initialVelocityY = 0; // Will fall straight down
-                        speed = 0; // NO horizontal movement - pure vertical drop
+                        // Keep horizontal speed so they progress left while falling
                     } else {
                         // GROUND BURST - shoot up from below IN ARENA
                         spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
                         spawnY = GROUND_Y + 20; // Below ground
                         initialVelocityY = -15; // Shoot upward fast
-                        speed = 0; // NO horizontal movement - pure vertical burst
+                        // Keep horizontal speed so they progress left while bursting
                     }
                     
                     enemies.push({
@@ -1605,14 +1572,14 @@
                     spawnY = HUD_HEIGHT + 10;
                     initialVelocityY = 0;
                     onGround = false;
-                    speed = 0; // NO horizontal movement
+                    // Keep horizontal speed so they progress left while falling
                 } else if (spawnType < 0.55) {
                     // GROUND BURST - shoot up IN ARENA (15%)
                     spawnX = 240 + Math.random() * 200; // 240-440px (center of arena)
                     spawnY = GROUND_Y + 20; // Below ground
                     initialVelocityY = -15; // Fast upward
                     onGround = false;
-                    speed = 0; // NO horizontal movement
+                    // Keep horizontal speed so they progress left while bursting
                 } else if (spawnType < 0.75) {
                     // Mid-air spawn - high (20%)
                     spawnX = 500 + Math.random() * 80; // Just off right
