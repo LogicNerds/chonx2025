@@ -1375,41 +1375,47 @@
             } else if (waveNum === 3) {
                 waveEnemiesTotal = 67;
                 
-                // INITIAL RAT RUSH - spawn 12 rats immediately (mostly fast, all heights)
-                for (let i = 0; i < 12; i++) {
+                // INITIAL RAT RUSH - spawn 20 rats immediately (ALL FAST, all heights, CHAOS)
+                for (let i = 0; i < 20; i++) {
                     const speedType = Math.random();
                     let speed;
                     
-                    // 80% fast rats in initial rush
-                    if (speedType < 0.2) {
-                        speed = -2; // Some medium
-                    } else if (speedType < 0.6) {
+                    // ALL FAST in initial rush
+                    if (speedType < 0.5) {
                         speed = -3.75; // Fast
                     } else {
                         speed = -6; // Very fast
                     }
                     
-                    // All heights evenly distributed
-                    const heightType = Math.random();
-                    let spawnY, initialVelocityY;
+                    // Random spawn types including ground bursts and vertical drops
+                    const spawnType = Math.random();
+                    let spawnX, spawnY, initialVelocityY;
                     
-                    if (heightType < 0.33) {
-                        // Top third
-                        spawnY = HUD_HEIGHT + 10 + Math.random() * 80;
+                    if (spawnType < 0.25) {
+                        // Normal horizontal spawn - top
+                        spawnX = BASE_WIDTH - 100 + i * 30;
+                        spawnY = HUD_HEIGHT + 10 + Math.random() * 60;
                         initialVelocityY = 0;
-                    } else if (heightType < 0.66) {
-                        // Middle third
-                        spawnY = HUD_HEIGHT + 90 + Math.random() * 80;
+                    } else if (spawnType < 0.5) {
+                        // Normal horizontal spawn - middle
+                        spawnX = BASE_WIDTH - 100 + i * 30;
+                        spawnY = HUD_HEIGHT + 80 + Math.random() * 80;
                         initialVelocityY = Math.random() * 2;
+                    } else if (spawnType < 0.7) {
+                        // VERTICAL DROP - straight down from ceiling
+                        spawnX = 250 + Math.random() * 200; // Random X in visible arena
+                        spawnY = HUD_HEIGHT + 10;
+                        initialVelocityY = 0; // Will fall straight down
                     } else {
-                        // Bottom third / ground
-                        spawnY = HUD_HEIGHT + 170 + Math.random() * 60;
-                        initialVelocityY = Math.random() * 3;
+                        // GROUND BURST - shoot up from below
+                        spawnX = 250 + Math.random() * 200; // Random X in visible arena
+                        spawnY = GROUND_Y + 20; // Below ground
+                        initialVelocityY = -15; // Shoot upward fast
                     }
                     
                     enemies.push({
                         type: 'rat',
-                        x: BASE_WIDTH - 100 + i * 40, // Staggered across screen
+                        x: spawnX,
                         y: spawnY,
                         width: 40,
                         height: 40,
@@ -1457,8 +1463,8 @@
             spawnTimer++;
             
             let spawnRate = 60;
-            if (currentWave === 2) spawnRate = 60; // Faster pacing
-            if (currentWave === 3) spawnRate = 20;
+            if (currentWave === 2) spawnRate = 40; // Much faster
+            if (currentWave === 3) spawnRate = 15; // Even more frantic
 
             if (spawnTimer >= spawnRate) {
                 spawnTimer = 0;
@@ -1555,34 +1561,39 @@
                     jumpFrequency = 30 + Math.random() * 20;
                 }
                 
-                // Spawn type: ALL heights - top, middle, bottom, everywhere
-                // Spawn just off right edge of visible arena (~500-550px) so immediately visible
+                // Spawn type: ALL heights + vertical drops + ground bursts
                 const spawnType = Math.random();
                 let spawnX, spawnY, initialVelocityY, onGround;
                 
-                if (spawnType < 0.25) {
-                    // Ground spawn (25% - reduced)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 50; // ~517-567px
+                if (spawnType < 0.2) {
+                    // Ground spawn (20%)
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 50;
                     spawnY = GROUND_Y - 40;
                     initialVelocityY = 0;
                     onGround = true;
-                } else if (spawnType < 0.5) {
-                    // Drop from ceiling (25%)
-                    spawnX = BASE_WIDTH - 200 + Math.random() * 100; // ~467-567px
-                    spawnY = HUD_HEIGHT + 10; // Right below HUD
+                } else if (spawnType < 0.4) {
+                    // VERTICAL DROP - straight down (20%)
+                    spawnX = 250 + Math.random() * 200; // Random X in arena
+                    spawnY = HUD_HEIGHT + 10;
                     initialVelocityY = 0;
                     onGround = false;
+                } else if (spawnType < 0.55) {
+                    // GROUND BURST - shoot up (15%)
+                    spawnX = 250 + Math.random() * 200;
+                    spawnY = GROUND_Y + 20; // Below ground
+                    initialVelocityY = -15; // Fast upward
+                    onGround = false;
                 } else if (spawnType < 0.75) {
-                    // Mid-air spawn - high (25%)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 80; // ~517-597px
-                    spawnY = HUD_HEIGHT + 60 + Math.random() * 80; // Upper third
-                    initialVelocityY = Math.random() * 2; // Slight downward
+                    // Mid-air spawn - high (20%)
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 80;
+                    spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
+                    initialVelocityY = Math.random() * 2;
                     onGround = false;
                 } else {
                     // Mid-air spawn - middle (25%)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 80; // ~517-597px
-                    spawnY = HUD_HEIGHT + 140 + Math.random() * 80; // Middle third
-                    initialVelocityY = Math.random() * 3; // Falling
+                    spawnX = BASE_WIDTH - 150 + Math.random() * 80;
+                    spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
+                    initialVelocityY = Math.random() * 3;
                     onGround = false;
                 }
                 
