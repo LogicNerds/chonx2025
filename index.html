@@ -1239,7 +1239,20 @@
                 const dx = clientX - centerX;
                 const dy = clientY - centerY;
                 
-                const rawAngle = Math.atan2(dy, dx);
+                let rawAngle = Math.atan2(dy, dx);
+                
+                // If player is moving and tap is on same side as movement, favor forward shooting
+                if (keys.right && dx > 0) {
+                    // Moving right, tapped right side - bias toward right hemisphere
+                    if (rawAngle > Math.PI / 2) rawAngle = Math.PI / 2;
+                    if (rawAngle < -Math.PI / 2) rawAngle = -Math.PI / 2;
+                } else if (keys.left && dx < 0) {
+                    // Moving left, tapped left side - bias toward left hemisphere  
+                    if (rawAngle < Math.PI / 2 && rawAngle > -Math.PI / 2) {
+                        rawAngle = rawAngle > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    }
+                }
+                
                 dialChargeAngle = snapToNearest16(rawAngle);
                 
                 // Play charge sound
@@ -1323,7 +1336,20 @@
                 const dx = clientX - centerX;
                 const dy = clientY - centerY;
                 
-                const rawAngle = Math.atan2(dy, dx);
+                let rawAngle = Math.atan2(dy, dx);
+                
+                // If player is moving and tap is on same side as movement, favor forward shooting
+                if (keys.right && dx > 0) {
+                    // Moving right, tapped right side - bias toward right hemisphere
+                    if (rawAngle > Math.PI / 2) rawAngle = Math.PI / 2;
+                    if (rawAngle < -Math.PI / 2) rawAngle = -Math.PI / 2;
+                } else if (keys.left && dx < 0) {
+                    // Moving left, tapped left side - bias toward left hemisphere
+                    if (rawAngle < Math.PI / 2 && rawAngle > -Math.PI / 2) {
+                        rawAngle = rawAngle > 0 ? Math.PI / 2 : -Math.PI / 2;
+                    }
+                }
+                
                 const snappedAngle = snapToNearest16(rawAngle);
                 
                 shootProjectileAtAngle(snappedAngle, false);
@@ -1393,24 +1419,26 @@
                     
                     if (spawnType < 0.25) {
                         // Normal horizontal spawn - top
-                        spawnX = BASE_WIDTH - 100 + i * 30;
+                        spawnX = 500 + i * 25; // Just off right edge
                         spawnY = HUD_HEIGHT + 10 + Math.random() * 60;
                         initialVelocityY = 0;
                     } else if (spawnType < 0.5) {
                         // Normal horizontal spawn - middle
-                        spawnX = BASE_WIDTH - 100 + i * 30;
+                        spawnX = 500 + i * 25;
                         spawnY = HUD_HEIGHT + 80 + Math.random() * 80;
                         initialVelocityY = Math.random() * 2;
                     } else if (spawnType < 0.7) {
-                        // VERTICAL DROP - straight down from ceiling
-                        spawnX = 250 + Math.random() * 200; // Random X in visible arena
+                        // VERTICAL DROP - straight down from ceiling IN ARENA
+                        spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
                         spawnY = HUD_HEIGHT + 10;
                         initialVelocityY = 0; // Will fall straight down
+                        speed = 0; // NO horizontal movement - pure vertical drop
                     } else {
-                        // GROUND BURST - shoot up from below
-                        spawnX = 250 + Math.random() * 200; // Random X in visible arena
+                        // GROUND BURST - shoot up from below IN ARENA
+                        spawnX = 240 + Math.random() * 200; // 240-440px (center of visible arena)
                         spawnY = GROUND_Y + 20; // Below ground
                         initialVelocityY = -15; // Shoot upward fast
+                        speed = 0; // NO horizontal movement - pure vertical burst
                     }
                     
                     enemies.push({
@@ -1567,31 +1595,33 @@
                 
                 if (spawnType < 0.2) {
                     // Ground spawn (20%)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 50;
+                    spawnX = 500 + Math.random() * 50; // Just off right edge
                     spawnY = GROUND_Y - 40;
                     initialVelocityY = 0;
                     onGround = true;
                 } else if (spawnType < 0.4) {
-                    // VERTICAL DROP - straight down (20%)
-                    spawnX = 250 + Math.random() * 200; // Random X in arena
+                    // VERTICAL DROP - straight down IN ARENA (20%)
+                    spawnX = 240 + Math.random() * 200; // 240-440px (center of arena)
                     spawnY = HUD_HEIGHT + 10;
                     initialVelocityY = 0;
                     onGround = false;
+                    speed = 0; // NO horizontal movement
                 } else if (spawnType < 0.55) {
-                    // GROUND BURST - shoot up (15%)
-                    spawnX = 250 + Math.random() * 200;
+                    // GROUND BURST - shoot up IN ARENA (15%)
+                    spawnX = 240 + Math.random() * 200; // 240-440px (center of arena)
                     spawnY = GROUND_Y + 20; // Below ground
                     initialVelocityY = -15; // Fast upward
                     onGround = false;
+                    speed = 0; // NO horizontal movement
                 } else if (spawnType < 0.75) {
                     // Mid-air spawn - high (20%)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 80;
+                    spawnX = 500 + Math.random() * 80; // Just off right
                     spawnY = HUD_HEIGHT + 60 + Math.random() * 80;
                     initialVelocityY = Math.random() * 2;
                     onGround = false;
                 } else {
                     // Mid-air spawn - middle (25%)
-                    spawnX = BASE_WIDTH - 150 + Math.random() * 80;
+                    spawnX = 500 + Math.random() * 80; // Just off right
                     spawnY = HUD_HEIGHT + 140 + Math.random() * 80;
                     initialVelocityY = Math.random() * 3;
                     onGround = false;
