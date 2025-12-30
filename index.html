@@ -1405,7 +1405,10 @@
         // UPDATE LOOP
         // ===============================================
         function update() {
-            if (gameState !== 'playing') return;
+            if (gameState !== 'playing' && gameState !== 'victory') return;
+            
+            // During victory sequence, only render - no gameplay updates
+            if (gameState === 'victory') return;
 
             // Update gamepad
             updateGamepad();
@@ -1785,8 +1788,7 @@
                     projectiles.splice(j, 1);
                     
                     if (boss.health <= 0) {
-                        boss = null;
-                        endGame(true);
+                        victorySequence(); // Trigger victory animation
                     }
                 }
             }
@@ -2061,6 +2063,151 @@
         ];
         let currentTipIndex = 0;
         let tipInterval = null;
+
+        function playVictoryChiptune() {
+            if (!audioContext) initAudioContext();
+            if (!audioContext) return;
+
+            try {
+                // Victory melody - upward arpeggio in C major
+                const notes = [
+                    { freq: 523.25, time: 0 },    // C5
+                    { freq: 659.25, time: 0.15 }, // E5
+                    { freq: 783.99, time: 0.3 },  // G5
+                    { freq: 1046.50, time: 0.45 }, // C6
+                    { freq: 783.99, time: 0.6 },  // G5
+                    { freq: 1046.50, time: 0.75 }, // C6 (hold)
+                ];
+
+                notes.forEach(note => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.type = 'square';
+                    oscillator.frequency.value = note.freq;
+                    
+                    const startTime = audioContext.currentTime + note.time;
+                    const duration = note.time === 0.75 ? 0.4 : 0.12; // Hold last note longer
+                    
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + duration);
+                });
+            } catch (e) {
+                console.log('Victory chiptune error:', e);
+            }
+        }
+
+        function victorySequence() {
+            gameState = 'victory'; // New state to freeze gameplay
+
+            // Play victory chiptune
+            playVictoryChiptune();
+
+            // Store Brayn's final position for death animation
+            const dyingBrayn = {
+                x: boss.x,
+                y: boss.y,
+                width: boss.width,
+                height: boss.height,
+                velocityX: 0,
+                velocityY: 0,
+                rotation: 0,
+                alpha: 1,
+                bounceCount: 0
+            };
+
+            // Remove boss from game
+            boss = null;
+
+            let animationFrame = 0;
+            const totalFrames = 120; // ~2 seconds at 60fps
+
+            function animateBraynDeath() {
+                if (animationFrame >= totalFrames) {
+                    // Animation complete, show victory screen
+                    endGame(true);
+                    return;
+                }
+
+                animationFrame++;
+
+                // Phase 1: Erratic bouncing (frames 0-60)
+                if (animationFrame < 60) {
+                    dyingBrayn.velocityX = (Math.random() - 0.5) * 15;
+                    dyingBrayn.velocityY = -8 + Math.random() * 4;
+                    dyingBrayn.rotation += (Math.random() - 0.5) * 0.5;
+                    
+                    // Apply velocity
+                    dyingBrayn.x += dyingBrayn.velocityX;
+                    dyingBrayn.y += dyingBrayn.velocityY;
+                    dyingBrayn.velocityY += 0.8; // Gravity
+                    
+                    // Bounce off edges
+                    if (dyingBrayn.x < 0 || dyingBrayn.x > BASE_WIDTH - dyingBrayn.width) {
+                        dyingBrayn.velocityX *= -1;
+                        dyingBrayn.bounceCount++;
+                    }
+                    if (dyingBrayn.y > GROUND_Y - dyingBrayn.height) {
+                        dyingBrayn.y = GROUND_Y - dyingBrayn.height;
+                        dyingBrayn.velocityY *= -0.7;
+                        dyingBrayn.bounceCount++;
+                    }
+                    
+                    // Flash colors (red/green/yellow)
+                    dyingBrayn.flashColor = animationFrame % 6 < 3 ? '#ff0000' : (animationFrame % 4 < 2 ? '#00ff00' : '#ffff00');
+                }
+                // Phase 2: Fly off screen (frames 60-90)
+                else if (animationFrame < 90) {
+                    dyingBrayn.velocityY = -20; // Shoot upward
+                    dyingBrayn.y += dyingBrayn.velocityY;
+                    dyingBrayn.rotation += 0.3;
+                    dyingBrayn.alpha = 1 - ((animationFrame - 60) / 30); // Fade out
+                }
+                // Phase 3: Screen flashes (frames 90-120)
+                else {
+                    const flashColors = ['#00ff00', '#ffff00', '#ff00ff'];
+                    const flashIndex = Math.floor((animationFrame - 90) / 5) % flashColors.length;
+                    ctx.fillStyle = flashColors[flashIndex];
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+                    ctx.globalAlpha = 1;
+                }
+
+                // Render dying Brayn (if still visible)
+                if (animationFrame < 90) {
+                    ctx.save();
+                    ctx.globalAlpha = dyingBrayn.alpha;
+                    
+                    // Translate to center of Brayn for rotation
+                    ctx.translate(dyingBrayn.x + dyingBrayn.width / 2, dyingBrayn.y + dyingBrayn.height / 2);
+                    ctx.rotate(dyingBrayn.rotation);
+                    
+                    // Flash effect
+                    if (dyingBrayn.flashColor && animationFrame < 60) {
+                        ctx.fillStyle = dyingBrayn.flashColor;
+                        ctx.fillRect(-dyingBrayn.width / 2, -dyingBrayn.height / 2, dyingBrayn.width, dyingBrayn.height);
+                    }
+                    
+                    // Draw Brayn sprite (flipped)
+                    if (sprites.braynStand && sprites.braynStand.complete) {
+                        ctx.scale(-1, 1);
+                        ctx.drawImage(sprites.braynStand, -dyingBrayn.width / 2, -dyingBrayn.height / 2, dyingBrayn.width, dyingBrayn.height);
+                    }
+                    
+                    ctx.restore();
+                }
+
+                requestAnimationFrame(animateBraynDeath);
+            }
+
+            animateBraynDeath();
+        }
 
         function endGame(isVictory) {
             gameState = 'ended';
