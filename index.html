@@ -830,6 +830,19 @@
             };
             sprites.background.src = ASSETS.images.background;
 
+            // Load Neon Bread logo
+            sprites.neonBreadLogo = new Image();
+            sprites.neonBreadLogo.onload = () => {
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.onerror = () => {
+                console.log('Neon Bread logo failed to load');
+                imagesLoaded++;
+                checkAssetsLoaded(callback);
+            };
+            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
+
             Object.keys(ASSETS.sprites).forEach(key => {
                 sprites[key] = new Image();
                 sprites[key].onload = () => {
@@ -2176,13 +2189,13 @@
             });
 
             // Draw Neon Bread logo (bottom right, 50% opacity)
-            if (images.neonBreadLogo && images.neonBreadLogo.complete) {
+            if (sprites.neonBreadLogo && sprites.neonBreadLogo.complete) {
                 ctx.save();
                 ctx.globalAlpha = 0.5;
                 const logoWidth = 60;
-                const logoHeight = (images.neonBreadLogo.height / images.neonBreadLogo.width) * logoWidth;
+                const logoHeight = (sprites.neonBreadLogo.height / sprites.neonBreadLogo.width) * logoWidth;
                 ctx.drawImage(
-                    images.neonBreadLogo,
+                    sprites.neonBreadLogo,
                     BASE_WIDTH - logoWidth - 10,
                     BASE_HEIGHT - logoHeight - 10,
                     logoWidth,
@@ -2510,7 +2523,7 @@
         document.getElementById('castBrayn').src = ASSETS.sprites.braynStand;
         
         document.getElementById('startButton').addEventListener('click', () => {
-            document.getElementById('startButton').textContent = 'Loading...';
+            document.getElementById('startButton').textContent = 'chonking...';
             initAudioContext();
             
             loadAssets(() => {
