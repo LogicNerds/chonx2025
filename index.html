@@ -662,8 +662,7 @@
         const ASSETS = {
             images: {
                 background: ASSET_BASE_URL + "assets/background.jpg",
-                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png",
-                neonBreadLogo: ASSET_BASE_URL + "assets/NeonBread Blue on clear.png"
+                logo: ASSET_BASE_URL + "assets/chonx25%20logo.png"
             },
             sprites: {
                 chonxStand: ASSET_BASE_URL + "assets/Chonx standing.png",
@@ -829,19 +828,6 @@
                 checkAssetsLoaded(callback);
             };
             sprites.background.src = ASSETS.images.background;
-
-            // Load Neon Bread logo
-            sprites.neonBreadLogo = new Image();
-            sprites.neonBreadLogo.onload = () => {
-                imagesLoaded++;
-                checkAssetsLoaded(callback);
-            };
-            sprites.neonBreadLogo.onerror = () => {
-                console.log('Neon Bread logo failed to load');
-                imagesLoaded++;
-                checkAssetsLoaded(callback);
-            };
-            sprites.neonBreadLogo.src = ASSETS.images.neonBreadLogo;
 
             Object.keys(ASSETS.sprites).forEach(key => {
                 sprites[key] = new Image();
@@ -2188,22 +2174,6 @@
                 }
             });
 
-            // Draw Neon Bread logo (bottom right, 50% opacity)
-            if (sprites.neonBreadLogo && sprites.neonBreadLogo.complete) {
-                ctx.save();
-                ctx.globalAlpha = 0.5;
-                const logoWidth = 60;
-                const logoHeight = (sprites.neonBreadLogo.height / sprites.neonBreadLogo.width) * logoWidth;
-                ctx.drawImage(
-                    sprites.neonBreadLogo,
-                    BASE_WIDTH - logoWidth - 10,
-                    BASE_HEIGHT - logoHeight - 10,
-                    logoWidth,
-                    logoHeight
-                );
-                ctx.restore();
-            }
-
             drawHUD();
         }
 
@@ -2523,7 +2493,7 @@
         document.getElementById('castBrayn').src = ASSETS.sprites.braynStand;
         
         document.getElementById('startButton').addEventListener('click', () => {
-            document.getElementById('startButton').textContent = 'chonking...';
+            document.getElementById('startButton').textContent = 'Loading...';
             initAudioContext();
             
             loadAssets(() => {
