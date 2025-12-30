@@ -195,18 +195,18 @@
 
         .dpad {
             position: relative;
-            width: 110px;
-            height: 110px;
+            width: 137px;
+            height: 137px;
         }
 
         .dpad-btn {
             position: absolute;
-            width: 36px;
-            height: 36px;
+            width: 45px;
+            height: 45px;
             background: #000;
             border: 3px solid #00ff00;
             color: #00ff00;
-            font-size: 18px;
+            font-size: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -222,66 +222,53 @@
             box-shadow: inset 0 0 20px #000, 0 0 20px #00ff00;
         }
 
-        #btnLeft { left: 0; top: 37px; }
-        #btnRight { right: 0; top: 37px; }
-        #btnUp { left: 37px; top: 0; }
-        #btnDown { left: 37px; bottom: 0; }
+        #btnLeft { left: 0; top: 46px; }
+        #btnRight { right: 0; top: 46px; }
+        #btnUp { left: 46px; top: 0; }
+        #btnDown { left: 46px; bottom: 0; }
 
-        /* Fire Dial - Bottom Right */
-        #fireDial {
+        /* Fire Pad - 8 Directional Buttons - Bottom Right */
+        #firePad {
             position: absolute;
             right: 35px;
             bottom: 30px;
             width: 110px;
             height: 110px;
-            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, rgba(0, 0, 0, 0.9) 70%);
+        }
+
+        .fire-btn {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #000;
             border: 3px solid #00ff00;
-            border-radius: 50%;
-            box-shadow: 
-                inset 0 0 20px rgba(0, 255, 0, 0.3),
-                0 0 15px #00ff00;
-            cursor: crosshair;
+            color: #00ff00;
+            font-size: 10px;
+            font-family: 'Press Start 2P';
+            display: flex;
+            align-items: center;
+            justify-content: center;
             user-select: none;
             touch-action: none;
+            box-shadow: inset 0 0 10px #00ff00, 0 0 10px #00ff00;
+            cursor: pointer;
         }
 
-        #fireDial::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 90%;
-            background: 
-                linear-gradient(0deg, transparent 49%, #00ff00 49%, #00ff00 51%, transparent 51%),
-                linear-gradient(90deg, transparent 49%, #00ff00 49%, #00ff00 51%, transparent 51%),
-                linear-gradient(45deg, transparent 49%, rgba(0, 255, 0, 0.4) 49%, rgba(0, 255, 0, 0.4) 51%, transparent 51%),
-                linear-gradient(-45deg, transparent 49%, rgba(0, 255, 0, 0.4) 49%, rgba(0, 255, 0, 0.4) 51%, transparent 51%);
-            border-radius: 50%;
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        #fireDial::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
+        .fire-btn:active {
             background: #00ff00;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00ff00;
-            pointer-events: none;
+            color: #000;
+            box-shadow: inset 0 0 20px #000, 0 0 20px #00ff00;
         }
 
-        #fireDial:active {
-            box-shadow: 
-                inset 0 0 30px rgba(0, 255, 0, 0.5),
-                0 0 25px #00ff00;
-        }
+        /* 8 directional positions */
+        #fireUp { left: 39px; top: 0; }
+        #fireUpRight { right: 0; top: 7px; }
+        #fireRight { right: 0; top: 39px; }
+        #fireDownRight { right: 0; bottom: 7px; }
+        #fireDown { left: 39px; bottom: 0; }
+        #fireDownLeft { left: 0; bottom: 7px; }
+        #fireLeft { left: 0; top: 39px; }
+        #fireUpLeft { left: 0; top: 7px; }
 
         .action-buttons {
             position: absolute;
@@ -557,7 +544,16 @@
 
     <!-- Right Control Panel -->
     <div id="rightControls">
-        <div id="fireDial"></div>
+        <div id="firePad">
+            <div class="fire-btn" id="fireUp">▲</div>
+            <div class="fire-btn" id="fireUpRight">↗</div>
+            <div class="fire-btn" id="fireRight">►</div>
+            <div class="fire-btn" id="fireDownRight">↘</div>
+            <div class="fire-btn" id="fireDown">▼</div>
+            <div class="fire-btn" id="fireDownLeft">↙</div>
+            <div class="fire-btn" id="fireLeft">◄</div>
+            <div class="fire-btn" id="fireUpLeft">↖</div>
+        </div>
         <div class="action-buttons">
             <div class="action-btn" id="btnJetpack">JET</div>
             <div class="action-btn" id="btnJump">JUMP</div>
@@ -1141,50 +1137,46 @@
                 shootProjectileAtAngle(angle, false);
             });
 
-            // Fire Dial - touch/mouse
-            const fireDial = document.getElementById('fireDial');
-            let dialCharging = false;
-            let dialChargeStart = 0;
+            // Fire Pad - 8 directional buttons
+            const fireButtons = {
+                fireUp: 0,                    // 0 degrees (right)
+                fireUpRight: Math.PI / 4,     // 45 degrees
+                fireRight: Math.PI / 2,       // 90 degrees
+                fireDownRight: 3 * Math.PI / 4, // 135 degrees
+                fireDown: Math.PI,            // 180 degrees
+                fireDownLeft: -3 * Math.PI / 4, // -135 degrees
+                fireLeft: -Math.PI / 2,       // -90 degrees
+                fireUpLeft: -Math.PI / 4      // -45 degrees
+            };
 
-            fireDial.addEventListener('touchstart', handleDialStart);
-            fireDial.addEventListener('mousedown', handleDialStart);
-            fireDial.addEventListener('touchend', handleDialEnd);
-            fireDial.addEventListener('mouseup', handleDialEnd);
-            
-            function handleDialStart(e) {
-                e.preventDefault();
-                dialCharging = true;
-                dialChargeStart = Date.now();
-                playSound('chipCharge', 0.2);
-            }
-            
-            function handleDialEnd(e) {
-                e.preventDefault();
-                if (!dialCharging) return;
+            // Actually map to correct angles (0 = right, rotate counter-clockwise)
+            const fireAngles = {
+                fireRight: 0,                   // Right →
+                fireUpRight: -Math.PI / 4,      // Up-Right ↗
+                fireUp: -Math.PI / 2,           // Up ↑
+                fireUpLeft: -3 * Math.PI / 4,   // Up-Left ↖
+                fireLeft: Math.PI,              // Left ←
+                fireDownLeft: 3 * Math.PI / 4,  // Down-Left ↙
+                fireDown: Math.PI / 2,          // Down ↓
+                fireDownRight: Math.PI / 4      // Down-Right ↘
+            };
+
+            Object.keys(fireAngles).forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                const angle = fireAngles[btnId];
                 
-                dialCharging = false;
-                if (sounds.chipCharge) sounds.chipCharge.pause();
+                // Touch events
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    shootProjectileAtAngle(angle, false);
+                });
                 
-                const rect = fireDial.getBoundingClientRect();
-                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
-                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-                
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                const dx = clientX - centerX;
-                const dy = clientY - centerY;
-                const angle = Math.atan2(dy, dx);
-                
-                const chargeDuration = (Date.now() - dialChargeStart) / 1000;
-                const isCharged = chargeDuration > 0.3;
-                
-                if (isCharged) {
-                    stats.chargeShotsUsed++;
-                }
-                
-                shootProjectileAtAngle(angle, isCharged);
-            }
+                // Click events
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    shootProjectileAtAngle(angle, false);
+                });
+            });
         }
 
         function shootProjectileAtAngle(angle, isCharged) {
@@ -1271,9 +1263,9 @@
                     enemies.push({
                         type: 'turdal',
                         x: BASE_WIDTH + 50,
-                        y: GROUND_Y - 30,
-                        width: 50,
-                        height: 50,
+                        y: GROUND_Y - 55,
+                        width: 55,
+                        height: 55,
                         velocityX: -1.5,
                         velocityY: 0,
                         health: 3,
@@ -2225,7 +2217,7 @@
                 <p>Enemies Neutralized: ${stats.enemiesKilled}</p>
                 <p>Charge Shots Used: ${stats.chargeShotsUsed}</p>
                 <p>Jet Pack Activations: ${stats.jetpackActivations}</p>
-                <p>Seconds of Life Wasted: ${playTime}</p>
+                <p>Seconds of Attention Burned: ${playTime}</p>
             `;
             
             document.getElementById('endStats').innerHTML = statsHTML;
