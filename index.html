@@ -494,7 +494,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: #000;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, #000 70%);
             z-index: 200;
             flex-direction: column;
             align-items: center;
@@ -505,6 +505,11 @@
         @media screen and (orientation: portrait) {
             #rotateOverlay {
                 display: flex;
+                /* Counter-rotate to stay upright when body rotates */
+                transform: rotate(-90deg);
+                transform-origin: center center;
+                width: 100vh;
+                height: 100vw;
             }
         }
 
@@ -514,6 +519,7 @@
             image-rendering: pixelated;
             margin-bottom: 40px;
             animation: bounce 1s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px #00ff00);
         }
 
         @keyframes bounce {
@@ -1317,24 +1323,25 @@
                 let speed, jumpPower, jumpFrequency;
                 
                 // More fast rats: 60% fast/very fast instead of 30%
+                // All speeds increased by 1.5x
                 if (speedType < 0.15) {
                     // Very slow (15% - reduced from 20%)
-                    speed = -0.8;
+                    speed = -1.2; // was -0.8
                     jumpPower = 0;
                     jumpFrequency = 0;
                 } else if (speedType < 0.25) {
                     // Slow (10% - reduced from 20%)
-                    speed = -1.2;
+                    speed = -1.8; // was -1.2
                     jumpPower = -5;
                     jumpFrequency = 80 + Math.random() * 40;
                 } else if (speedType < 0.6) {
                     // Fast (35% - increased from 30%)
-                    speed = -2.5;
+                    speed = -3.75; // was -2.5
                     jumpPower = -8;
                     jumpFrequency = 50 + Math.random() * 30;
                 } else {
                     // Very fast (25% - same, but increased base speed)
-                    speed = -4;
+                    speed = -6; // was -4
                     jumpPower = -12;
                     jumpFrequency = 30 + Math.random() * 20;
                 }
@@ -1719,20 +1726,21 @@
                         let speed, jumpPower, jumpFrequency;
                         
                         // More fast rats: 60% fast/very fast
+                        // All speeds increased by 1.5x
                         if (speedType < 0.15) {
-                            speed = -0.8;
+                            speed = -1.2; // was -0.8
                             jumpPower = 0;
                             jumpFrequency = 0;
                         } else if (speedType < 0.25) {
-                            speed = -1.2;
+                            speed = -1.8; // was -1.2
                             jumpPower = -5;
                             jumpFrequency = 80 + Math.random() * 40;
                         } else if (speedType < 0.6) {
-                            speed = -2.5;
+                            speed = -3.75; // was -2.5
                             jumpPower = -8;
                             jumpFrequency = 50 + Math.random() * 30;
                         } else {
-                            speed = -4;
+                            speed = -6; // was -4
                             jumpPower = -12;
                             jumpFrequency = 30 + Math.random() * 20;
                         }
