@@ -48,7 +48,7 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 .castRow p{font-size:22px;line-height:1.8;color:#c9f5cf}
 #castHead{font-size:56px;color:#ff4bd8;margin-bottom:40px;text-shadow:0 0 18px #ff4bd8}
 /* touch controls — live in the side columns outside the play area (width = --cw) */
-:root{--cw:118px}
+:root{--cw:150px}
 #touch{position:fixed;inset:0;z-index:10;display:none;pointer-events:none}
 #touch.on{display:block}
 .tcol{position:absolute;top:0;bottom:0;width:var(--cw);pointer-events:none}
@@ -56,13 +56,14 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 .tb{position:absolute;pointer-events:auto;touch-action:none;border:3px solid rgba(57,255,106,.8);background:rgba(57,255,106,.08);color:rgba(57,255,106,.95);display:flex;align-items:center;justify-content:center;font-family:inherit;border-radius:12px;font-size:11px}
 .tb.down{background:rgba(57,255,106,.55);color:#000}
 #tPause{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:calc(var(--cw) * .5);height:38px;font-size:13px}
-#tLeft,#tRight{bottom:max(14px,env(safe-area-inset-bottom));width:calc((var(--cw) - 22px) / 2);height:calc(var(--cw) * .8);font-size:22px}
+#tLeft,#tRight{bottom:max(14px,env(safe-area-inset-bottom));width:calc((var(--cw) - 22px) / 2);height:min(140px,calc(var(--cw) * .95));font-size:24px}
 #tLeft{left:max(8px,env(safe-area-inset-left))}
 #tRight{left:calc(max(8px,env(safe-area-inset-left)) + (var(--cw) - 22px) / 2 + 6px)}
-#tFire{right:max(6px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:calc(var(--cw) - 12px);height:calc(var(--cw) - 12px);border-radius:50%;border-color:rgba(255,225,77,.85);background:radial-gradient(circle,rgba(0,0,0,.4) 0%,rgba(80,70,0,.25) 70%,rgba(255,225,77,.1) 100%)}
+#tFire{right:calc(var(--cw) + 12px);bottom:max(12px,env(safe-area-inset-bottom));width:calc(var(--cw) * .95);height:calc(var(--cw) * .95);border-radius:50%;border-color:rgba(255,225,77,.85);background:radial-gradient(circle,rgba(0,0,0,.35) 0%,rgba(80,70,0,.2) 70%,rgba(255,225,77,.08) 100%);opacity:.55}
+#tFire.down{opacity:.9;background:radial-gradient(circle,rgba(0,0,0,.35) 0%,rgba(80,70,0,.25) 70%,rgba(255,225,77,.15) 100%)}
 #tFire .knob{position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(255,225,77,.85);left:34%;top:34%;pointer-events:none}
-#tJump{right:max(6px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--cw) - 2px);width:calc(var(--cw) - 12px);height:52px;border-color:rgba(255,75,216,.85);color:#ff4bd8}
-#tJet{right:max(6px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--cw) + 58px);width:calc(var(--cw) - 12px);height:44px;border-color:rgba(0,229,255,.85);color:#00e5ff}
+#tJump{right:max(6px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:calc(var(--cw) - 12px);height:112px;font-size:15px;border-color:rgba(255,75,216,.85);color:#ff4bd8}
+#tJet{right:max(6px,env(safe-area-inset-right));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 124px);width:calc(var(--cw) - 12px);height:92px;font-size:15px;border-color:rgba(0,229,255,.85);color:#00e5ff}
 #tJet.locked{opacity:.3}
 /* rotate overlay (phones in portrait only) */
 #rotate{position:fixed;inset:0;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,#0b2a12 0%,#000 70%);text-align:center}
@@ -83,8 +84,8 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
   <div class="tcol" id="tcolR">
     <div class="tb" id="tJet">JET</div>
     <div class="tb" id="tJump">JUMP</div>
-    <div class="tb" id="tFire"><div class="knob" id="tKnob"></div></div>
   </div>
+  <div class="tb" id="tFire"><div class="knob" id="tKnob"></div></div>
 </div>
 <div id="stage">
   <canvas id="game" width="1920" height="1080"></canvas>
@@ -264,18 +265,21 @@ window.addEventListener('keyup', e => { Input.keys[e.code] = false; });
 window.addEventListener('blur', () => { Input.keys = {}; Input.mouse.down = false; releaseAllTouch(); });
 
 canvas.addEventListener('contextmenu', e => e.preventDefault());
-canvas.addEventListener('mousemove', e => {
+// Only a real mouse aims/fires on the game area. Taps are ignored there, so a thumb that
+// slips off a touch button onto the game can never fire a shot.
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
   Input.mouse.sx = e.clientX; Input.mouse.sy = e.clientY; Input.mouse.active = true;
   Input.mouse.lastMove = performance.now(); Input.aimSource = 'mouse';
 });
-canvas.addEventListener('mousedown', e => {
-  if (e.button !== 0) return;
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.button !== 0) return;
   Input.mouse.down = true; Input.edge.fire = true; Input.aimSource = 'mouse';
   Input.mouse.sx = e.clientX; Input.mouse.sy = e.clientY; Input.mouse.active = true;
   Audio2.unlock();
 });
 // release is tracked on window so letting go off-canvas never leaves a stuck charge
-window.addEventListener('mouseup', e => { if (e.button === 0) Input.mouse.down = false; });
+window.addEventListener('pointerup', e => { if (e.pointerType === 'mouse' && e.button === 0) Input.mouse.down = false; });
 
 // mouse position -> world coordinates
 function mouseWorld() {
@@ -538,7 +542,7 @@ function toggleFullscreen() {
 }
 // On touch devices the game is narrowed just enough to leave a control column on each side,
 // so the on-screen controls never cover the play area.
-const TOUCH_COL_MIN = 118;
+const TOUCH_COL_MIN = 150;
 function layout() {
   const vw = window.innerWidth, vh = window.innerHeight;
   let s = Math.min(vw / 1920, vh / 1080);
