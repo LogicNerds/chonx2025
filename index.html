@@ -128,7 +128,12 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const t = ctl ? setTimeout(() => ctl.abort(), 9000) : 0;
     return fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
-      .then(r => r.json().then(j => { clearTimeout(t); if (!r.ok) throw new Error((j && j.error && j.error.message) || ('HTTP ' + r.status)); return j; }))
+      .then(r => r.json().then(j => {
+        clearTimeout(t);
+        const err = j && (j.error || (Array.isArray(j) && j[0] && j[0].error));
+        if (!r.ok || err) throw new Error((err && err.message) || ('HTTP ' + r.status));
+        return j;
+      }))
       .catch(e => { clearTimeout(t); throw e; });
   }
   const sv = v => ({ stringValue: v });
