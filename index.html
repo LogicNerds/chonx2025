@@ -47,19 +47,23 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 .castRow h2{font-size:30px;color:#ffe14d;margin-bottom:16px}
 .castRow p{font-size:22px;line-height:1.8;color:#c9f5cf}
 #castHead{font-size:56px;color:#ff4bd8;margin-bottom:40px;text-shadow:0 0 18px #ff4bd8}
-/* touch controls */
-#touch{position:absolute;inset:0;z-index:10;display:none;pointer-events:none}
+/* touch controls — live in the side columns outside the play area (width = --cw) */
+:root{--cw:118px}
+#touch{position:fixed;inset:0;z-index:10;display:none;pointer-events:none}
 #touch.on{display:block}
-.tb{position:absolute;pointer-events:auto;touch-action:none;border:6px solid rgba(57,255,106,.75);background:rgba(0,0,0,.35);color:rgba(57,255,106,.95);display:flex;align-items:center;justify-content:center;font-family:inherit;border-radius:28px}
+.tcol{position:absolute;top:0;bottom:0;width:var(--cw);pointer-events:none}
+#tcolL{left:0}#tcolR{right:0}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border:3px solid rgba(57,255,106,.8);background:rgba(57,255,106,.08);color:rgba(57,255,106,.95);display:flex;align-items:center;justify-content:center;font-family:inherit;border-radius:12px;font-size:11px}
 .tb.down{background:rgba(57,255,106,.55);color:#000}
-#tLeft{left:60px;bottom:90px;width:200px;height:200px;font-size:70px}
-#tRight{left:290px;bottom:90px;width:200px;height:200px;font-size:70px}
-#tJump{right:400px;bottom:60px;width:190px;height:150px;font-size:30px;border-color:rgba(255,75,216,.8);color:#ff4bd8}
-#tJet{right:400px;bottom:240px;width:190px;height:130px;font-size:30px;border-color:rgba(0,229,255,.8);color:#00e5ff}
+#tPause{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:calc(var(--cw) * .5);height:38px;font-size:13px}
+#tLeft,#tRight{bottom:max(14px,env(safe-area-inset-bottom));width:calc((var(--cw) - 22px) / 2);height:calc(var(--cw) * .8);font-size:22px}
+#tLeft{left:max(8px,env(safe-area-inset-left))}
+#tRight{left:calc(max(8px,env(safe-area-inset-left)) + (var(--cw) - 22px) / 2 + 6px)}
+#tFire{right:max(6px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));width:calc(var(--cw) - 12px);height:calc(var(--cw) - 12px);border-radius:50%;border-color:rgba(255,225,77,.85);background:radial-gradient(circle,rgba(0,0,0,.4) 0%,rgba(80,70,0,.25) 70%,rgba(255,225,77,.1) 100%)}
+#tFire .knob{position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(255,225,77,.85);left:34%;top:34%;pointer-events:none}
+#tJump{right:max(6px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--cw) - 2px);width:calc(var(--cw) - 12px);height:52px;border-color:rgba(255,75,216,.85);color:#ff4bd8}
+#tJet{right:max(6px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--cw) + 58px);width:calc(var(--cw) - 12px);height:44px;border-color:rgba(0,229,255,.85);color:#00e5ff}
 #tJet.locked{opacity:.3}
-#tFire{right:50px;bottom:50px;width:320px;height:320px;border-radius:50%;font-size:26px;border-color:rgba(255,225,77,.8);color:#ffe14d;background:radial-gradient(circle,rgba(0,0,0,.5) 0%,rgba(80,70,0,.3) 70%,rgba(255,225,77,.12) 100%)}
-#tFire .knob{position:absolute;width:70px;height:70px;border-radius:50%;background:rgba(255,225,77,.8);left:125px;top:125px;pointer-events:none}
-#tPause{left:50%;top:110px;transform:translateX(-50%);width:120px;height:90px;font-size:34px;border-radius:18px}
 /* rotate overlay (phones in portrait only) */
 #rotate{position:fixed;inset:0;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,#0b2a12 0%,#000 70%);text-align:center}
 #rotate.on{display:flex}
@@ -70,17 +74,21 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 </head>
 <body>
 <div id="rotate"><canvas id="rotateChonx" width="20" height="24"></canvas><p>CHAT, ROTATE YOUR<br>PHONE TO CHONK.</p></div>
-<div id="stage">
-  <canvas id="game" width="1920" height="1080"></canvas>
-
-  <div id="touch">
+<div id="touch">
+  <div class="tcol" id="tcolL">
+    <div class="tb" id="tPause">II</div>
     <div class="tb" id="tLeft">&#9664;</div>
     <div class="tb" id="tRight">&#9654;</div>
+  </div>
+  <div class="tcol" id="tcolR">
     <div class="tb" id="tJet">JET</div>
     <div class="tb" id="tJump">JUMP</div>
     <div class="tb" id="tFire"><div class="knob" id="tKnob"></div></div>
-    <div class="tb" id="tPause">II</div>
   </div>
+</div>
+<div id="stage">
+  <canvas id="game" width="1920" height="1080"></canvas>
+
 
   <div class="screen scan" id="title">
     <div class="logo">CHONX</div>
@@ -336,7 +344,7 @@ const touchHeld = {};
 function bindTouch(id, onDown, onUp, onMove) {
   const el = $(id);
   el.addEventListener('pointerdown', e => {
-    e.preventDefault(); el.setPointerCapture(e.pointerId); touchHeld[id] = e.pointerId;
+    e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (err) { } touchHeld[id] = e.pointerId;
     el.classList.add('down'); onDown(e, el); Audio2.unlock();
   });
   el.addEventListener('pointermove', e => { if (touchHeld[id] === e.pointerId && onMove) onMove(e, el); });
@@ -354,8 +362,7 @@ function dialAngle(e, el) {
   const r = el.getBoundingClientRect();
   const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
   const len = Math.hypot(dx, dy) || 1, m = Math.min(len, r.width / 2 - 20) / len;
-  const knob = $('tKnob'); const s = 320 / r.width;
-  knob.style.transform = `translate(${dx * m * s}px,${dy * m * s}px)`;
+  $('tKnob').style.transform = `translate(${dx * m}px,${dy * m}px)`;
   return Math.atan2(dy, dx);
 }
 function setupTouch() {
@@ -529,9 +536,16 @@ function toggleFullscreen() {
     } else (d.exitFullscreen || d.webkitExitFullscreen).call(d);
   } catch (e) { }
 }
+// On touch devices the game is narrowed just enough to leave a control column on each side,
+// so the on-screen controls never cover the play area.
+const TOUCH_COL_MIN = 118;
 function layout() {
-  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let s = Math.min(vw / 1920, vh / 1080);
+  if (isCoarse() && vw > vh) s = Math.min((vw - 2 * TOUCH_COL_MIN) / 1920, vh / 1080);
   $('stage').style.transform = `translate(-50%,-50%) scale(${s})`;
+  const col = Math.max(0, (vw - 1920 * s) / 2);
+  document.documentElement.style.setProperty('--cw', col + 'px');
   const portrait = window.innerHeight > window.innerWidth;
   $('rotate').classList.toggle('on', isCoarse() && portrait);
 }
@@ -2356,18 +2370,19 @@ function spawnLevel(fromCheckpoint) {
         bossStarted: false, doorShown: false, intro: fromCheckpoint ? 30 : 90 };
   enemies = []; eshots = []; pshots = []; props = []; hazards = []; boss = null; entityPlatforms = [];
   particles.length = 0; floaters.length = 0;
-  let startX = 3 * TILE + 8, startY = 12 * TILE, cpX = null;
+  let startX = 3 * TILE + 8, startY = 12 * TILE, cpX = null, cpY = null;
   d.ents.forEach((e, idx) => {
     const key = 'e' + idx;
     if (e.type === 'cell') { if (!L.taken[key]) { const c = new Cell(e.x, e.y); c.key = key; props.push(c); } }
     else if (e.type === 'grass') { if (!L.taken[key]) { const g = new Grass(e.x, e.y, false); g.key = key; props.push(g); } }
     else if (e.type === 'spring') props.push(new Spring(e.x, e.y));
-    else if (e.type === 'cp') { props.push(new Checkpoint(e.x, e.y)); cpX = e.x; }
+    else if (e.type === 'cp') { props.push(new Checkpoint(e.x, e.y)); cpX = e.x; cpY = e.y; }
     else if (e.type === 'boss') L.bossSpot = e;
     else if (HAZARD_TYPES[e.type]) hazards.push(new HAZARD_TYPES[e.type](e.x, e.y, e.o));
     else if (ENEMY_TYPES[e.type]) enemies.push(new ENEMY_TYPES[e.type](e.x, e.y, e.o));
   });
-  if (fromCheckpoint && L.checkpointHit && cpX !== null) startX = cpX + 20;
+  // respawn standing on the checkpoint's own floor (it isn't always at normal ground height)
+  if (fromCheckpoint && L.checkpointHit && cpX !== null) { startX = cpX + 12; startY = cpY; }
   P = makePlayer(startX, startY);
   Cam.locked = false; Cam.shake = 0;
   Cam.x = clamp(L.autoscroll ? startX - 80 : startX - VW * 0.4, 0, L.w * TILE - VW);
