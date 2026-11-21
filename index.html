@@ -112,6 +112,12 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
     <div id="storyNext">PRESS JUMP / CLICK / TAP TO CONTINUE</div>
   </div>
 
+  <div class="screen dim scan" id="cheat">
+    <h1 class="big" style="margin-bottom:20px">CHEAT ACTIVATED</h1>
+    <div class="tag" style="margin:0 0 40px">PICK A LEVEL. 3 LIVES. FULL HP.</div>
+    <div class="menu" id="cheatMenu"></div>
+  </div>
+
   <div class="screen dim" id="pause">
     <h1 class="big">PAUSED</h1>
     <div class="menu" id="pauseMenu"></div>
@@ -242,6 +248,17 @@ const Input = {
   usingTouchUI: false,
 };
 
+// secret: up up down down left right left right B A on the title screen (keyboard or controller)
+const Cheat = {
+  seq: ['U', 'U', 'D', 'D', 'L', 'R', 'L', 'R', 'B', 'A'], i: 0,
+  feed(t) {
+    if (typeof G === 'undefined' || G.state !== 'title') { this.i = 0; return false; }
+    if (t === this.seq[this.i]) this.i++;
+    else this.i = (t === this.seq[0]) ? 1 : 0;
+    if (this.i === this.seq.length) { this.i = 0; return true; }
+    return false;
+  }
+};
 const KEYMAP = {
   left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'],
   jump: ['Space'], jet: ['ShiftLeft', 'ShiftRight'], fire: ['KeyJ'],
@@ -256,6 +273,8 @@ window.addEventListener('keydown', e => {
   if (e.code === 'KeyJ') { Input.edge.fire = true; Input.aimSource = 'keys'; }
   if (e.code === 'Escape' || e.code === 'KeyP') Input.edge.pause = true;
   if (e.code === 'KeyF') toggleFullscreen();
+  const ct = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', KeyB: 'B', KeyA: 'A' }[e.code];
+  if (ct && Cheat.feed(ct)) { Input.menu.ok = false; Input.menu.up = Input.menu.down = false; showLevelSelect(); }
   if (e.code === 'ArrowUp' || e.code === 'KeyW') Input.menu.up = true;
   if (e.code === 'ArrowDown' || e.code === 'KeyS') Input.menu.down = true;
   if (e.code === 'Enter' || e.code === 'Space') Input.menu.ok = true;
@@ -314,12 +333,17 @@ function pollGamepad() {
   if (P.b && !prev.b) Input.menu.back = true;
   if (P.rt && !prev.rt) Input.edge.fire = true;
   if (P.start && !prev.start) Input.edge.pause = true;
+  const tokens = [];
+  if (P.up && !prev.du) tokens.push('U'); if (P.down && !prev.dd) tokens.push('D');
+  if (P.left && !prev.dl) tokens.push('L'); if (P.right && !prev.dr) tokens.push('R');
+  if (P.b && !prev.b) tokens.push('B'); if (P.a && !prev.a) tokens.push('A');
+  for (const t of tokens) if (Cheat.feed(t)) { Input.menu.ok = false; Input.menu.back = false; Input.edge.jump = false; showLevelSelect(); }
   const vUp = P.up || P.ly < -0.6, vDown = P.down || P.ly > 0.6;
   if (vUp && !prev.vUp) Input.menu.up = true;
   if (vDown && !prev.vDown) Input.menu.down = true;
   // any controller input hands aiming to the controller (a parked mouse cursor can't steal it)
   if (P.a || P.b || P.x || P.rt || P.lt || P.start || P.lx || P.ly || P.rHold || P.left || P.right || P.up || P.down) { Input.aimSource = 'pad'; Audio2.unlock(); }
-  Input.padPrev = { a: P.a, b: P.b, rt: P.rt, start: P.start, vUp, vDown };
+  Input.padPrev = { a: P.a, b: P.b, rt: P.rt, start: P.start, vUp, vDown, du: P.up, dd: P.down, dl: P.left, dr: P.right };
 }
 
 function moveX() {
@@ -2772,7 +2796,7 @@ function renderTitleBg() {
 // SCREENS + MENUS (mouse, touch, keyboard and controller all work)
 // =====================================================================
 const Menu = { items: [], idx: 0, onBack: null, box: null };
-const SCREENS = ['title', 'confirm', 'story', 'pause', 'stats', 'cast'];
+const SCREENS = ['title', 'confirm', 'story', 'pause', 'stats', 'cast', 'cheat'];
 function hideScreens() { SCREENS.forEach(s => $(s).classList.remove('on')); Menu.items = []; Menu.box = null; Menu.onBack = null; }
 function showMenu(screen, boxId, items, onBack) {
   hideScreens();
@@ -2811,6 +2835,18 @@ function showTitle() {
   $('titleHint').innerHTML = isCoarse()
     ? 'TOUCH: &#9664; &#9654; MOVE &middot; JUMP (TAP TWICE = DOUBLE JUMP, HOLD = RUN) &middot; JET &middot; DRAG THE DIAL TO AIM + FIRE'
     : 'KEYBOARD: A/D MOVE &middot; SPACE JUMP (TAP TWICE = DOUBLE JUMP, HOLD = RUN) &middot; J FIRE (HOLD W/S TO AIM) OR MOUSE AIM + CLICK &middot; SHIFT JET &middot; ESC PAUSE<br>CONTROLLER: L-STICK MOVE &middot; A JUMP (TWICE = DOUBLE, HOLD = RUN) &middot; R-STICK AIM &middot; RT FIRE &middot; LT JET &middot; START PAUSE';
+}
+function showLevelSelect() {
+  G.state = 'cheat';
+  Audio2.unlock(); Audio2.sfx('unlock');
+  const items = LEVELS.map((lv, i) => ({ label: (i + 1) + ' - ' + lv.name, action: () => cheatStart(i) }));
+  items.push({ label: 'BACK', action: showTitle, cls: 'pink' });
+  showMenu('cheat', 'cheatMenu', items, showTitle);
+}
+function cheatStart(i) {
+  G.lives = START_LIVES; G.cells = 0; G.stats = freshStats();
+  Audio2.playMusic();
+  startLevel(i);
 }
 function showConfirm() {
   G.state = 'confirm';
