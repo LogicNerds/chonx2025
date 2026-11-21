@@ -1574,17 +1574,17 @@ class Crusher {
 // spotlight beam (Aura District)
 class Spotlight {
   constructor(x, y, o = {}) { this.x = x; this.y = 32; this.len = 220; this.base = Math.PI / 2; this.amp = o.amp || 0.6; this.speed = o.speed || 0.018; this.ph = o.ph || 0; this.dead = false; this.a = this.base; this.on = true; }
-  // pulse: ON 150 frames, OFF 90 frames (1.5s). The last 30 off-frames flicker a warning before it fires back up.
-  phase() { return (L.t + Math.floor(this.ph * 100)) % 240; }
+  // pulse: ON 60 frames (1s), OFF 120 frames (2s). The last 30 off-frames flicker a warning before it fires back up.
+  phase() { return (L.t + Math.floor(this.ph * 100)) % 180; }
   update() {
     this.a = this.base + Math.sin(L.t * this.speed + this.ph) * this.amp;
-    const ph = this.phase(); this.on = ph < 150; this.warn = ph >= 210;
+    const ph = this.phase(); this.on = ph < 60; this.warn = ph >= 150;
     if (this.on && P && !P.dead) { // distance from player to beam segment
       const ex = this.x + Math.cos(this.a) * this.len, ey = this.y + Math.sin(this.a) * this.len;
       const px = P.cx, py = P.cy, vx = ex - this.x, vy = ey - this.y;
       const t = clamp(((px - this.x) * vx + (py - this.y) * vy) / (vx * vx + vy * vy), 0, 1);
       const d = Math.hypot(px - (this.x + vx * t), py - (this.y + vy * t));
-      if (d < 4 + t * 6 + 5) hurtPlayer(15, this.x);
+      if (d < 4 + t * 6 + 5) hurtPlayer(5, this.x);
     }
   }
   draw(c) {
@@ -2292,15 +2292,16 @@ const LEVELS = [
   } },
   { name: 'AURA DISTRICT', theme: 'aura', boss: 'peak', autoscroll: 0.55, build() {
     const b = new LB(232);
-    b.ground(0, 26); b.e('aura', 16, 11); b.cells(10, 14, 9); b.e('spot', 22, 0);
-    b.ground(30, 52); b.e('crash', 38, 11); b.plat(42, 46, 8); b.cells(42, 46, 7); b.e('aura', 49, 11); b.e('spot', 46, 0, { ph: 1.5 });
-    b.ground(56, 80); b.e('crash', 62, 11); b.plat(67, 71, 8); b.e('aura', 69, 7); b.e('spot', 64, 0); b.e('spot', 77, 0, { ph: 2 }); b.block(74, 75, 10, 11);
+    b.ground(0, 26); b.e('aura', 16, 11); b.cells(10, 14, 9);
+    b.ground(30, 52); b.e('crash', 38, 11); b.plat(42, 46, 8); b.cells(42, 46, 7); b.e('aura', 49, 11);
+    b.ground(56, 80); b.e('crash', 62, 11); b.plat(67, 71, 8); b.e('aura', 69, 7); b.block(74, 75, 10, 11);
     b.plat(82, 83, 9);
-    b.ground(85, 110); b.e('grass', 90, 11); b.e('cp', 96, 11); b.e('crash', 100, 11); b.e('crash', 106, 11); b.e('spot', 103, 0, { ph: 0.5 });
-    b.ground(114, 140); b.e('aura', 120, 11); b.plat(124, 128, 8); b.e('aura', 126, 7); b.e('clanker', 132, 5); b.e('spot', 118, 0); b.e('spot', 135, 0, { ph: 1 }); b.cells(124, 128, 6);
+    b.ground(85, 110); b.e('grass', 90, 11); b.e('cp', 96, 11); b.e('crash', 100, 11); b.e('crash', 106, 11);
+    b.ground(114, 140); b.e('aura', 120, 11); b.plat(124, 128, 8); b.e('aura', 126, 7); b.e('clanker', 132, 5); b.cells(124, 128, 6);
     b.plat(142, 143, 10);
-    b.ground(145, 170); b.e('crash', 150, 11); b.e('npc', 155, 11); b.e('crash', 160, 11); b.e('spot', 152, 0, { ph: 2.2 }); b.e('spot', 167, 0); b.block(163, 164, 10, 11);
-    b.ground(174, 231); b.e('aura', 180, 11); b.e('crash', 186, 11); b.e('aura', 192, 11); b.e('spot', 184, 0, { ph: 0.7 }); b.e('grass', 200, 11); b.cells(176, 182, 9);
+    b.ground(145, 170); b.e('crash', 150, 11); b.e('npc', 155, 11); b.e('crash', 160, 11); b.block(163, 164, 10, 11);
+    b.ground(174, 231); b.e('aura', 180, 11); b.e('crash', 186, 11); b.e('aura', 192, 11); b.e('grass', 200, 11); b.cells(176, 182, 9);
+    b.e('spot', 25, 0); b.e('spot', 78, 0, { ph: 0.6 }); b.e('spot', 140, 0, { ph: 1.2 }); b.e('spot', 170, 0, { ph: 0.3 }); b.e('spot', 201, 0, { ph: 0.9 });
     b.arena = 208; b.e('boss', 222, 11);
     return b;
   } },
@@ -2429,6 +2430,7 @@ function spawnLevel(fromCheckpoint) {
   // respawn standing on the checkpoint's own floor (it isn't always at normal ground height)
   if (fromCheckpoint && L.checkpointHit && cpX !== null) { startX = cpX + 12; startY = cpY; }
   P = makePlayer(startX, startY);
+  if (fromCheckpoint) P.inv = 120;   // 2 seconds of respawn safety (Chonx blinks)
   Cam.locked = false; Cam.shake = 0;
   Cam.x = clamp(L.autoscroll ? startX - 80 : startX - VW * 0.4, 0, L.w * TILE - VW);
   G.banner = { title: (fromCheckpoint ? 'TRY AGAIN' : 'LEVEL ' + (i + 1)), sub: def.name, t: fromCheckpoint ? 50 : 110, max: fromCheckpoint ? 50 : 110 };
