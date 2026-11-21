@@ -59,14 +59,12 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 #tLeft,#tRight{bottom:max(14px,env(safe-area-inset-bottom));width:calc((var(--cw) - 22px) / 2);height:min(140px,calc(var(--cw) * .95));font-size:24px}
 #tLeft{left:max(8px,env(safe-area-inset-left))}
 #tRight{left:calc(max(8px,env(safe-area-inset-left)) + (var(--cw) - 22px) / 2 + 6px)}
-#tRun{left:max(8px,env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + min(140px,calc(var(--cw) * .95)) + 12px);width:calc(var(--cw) - 16px);height:60px;font-size:14px;border-color:rgba(255,225,77,.85);color:#ffe14d}
 #tFire{right:calc(var(--cw) + 12px);bottom:max(12px,env(safe-area-inset-bottom));width:calc(var(--cw) * .95);height:calc(var(--cw) * .95);border-radius:50%;border-color:rgba(255,225,77,.85);background:radial-gradient(circle,rgba(0,0,0,.35) 0%,rgba(80,70,0,.2) 70%,rgba(255,225,77,.08) 100%);opacity:.55}
 #tFire.down{opacity:.9;background:radial-gradient(circle,rgba(0,0,0,.35) 0%,rgba(80,70,0,.25) 70%,rgba(255,225,77,.15) 100%)}
 #tFire .knob{position:absolute;width:32%;height:32%;border-radius:50%;background:rgba(255,225,77,.85);left:34%;top:34%;pointer-events:none}
 #tJump{right:max(6px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:calc(var(--cw) - 12px);height:112px;font-size:15px;border-color:rgba(255,75,216,.85);color:#ff4bd8}
 #tJet{right:max(6px,env(safe-area-inset-right));bottom:calc(max(12px,env(safe-area-inset-bottom)) + 124px);width:calc(var(--cw) - 12px);height:92px;font-size:15px;border-color:rgba(0,229,255,.85);color:#00e5ff}
 #tJet.locked{opacity:.3}
-#tRun.lit{background:rgba(255,225,77,.5);color:#000}
 /* rotate overlay (phones in portrait only) */
 #rotate{position:fixed;inset:0;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle,#0b2a12 0%,#000 70%);text-align:center}
 #rotate.on{display:flex}
@@ -80,7 +78,6 @@ h1.big{font-size:64px;color:#ff4bd8;text-shadow:0 0 20px #ff4bd8;margin-bottom:5
 <div id="touch">
   <div class="tcol" id="tcolL">
     <div class="tb" id="tPause">II</div>
-    <div class="tb" id="tRun">RUN</div>
     <div class="tb" id="tLeft">&#9664;</div>
     <div class="tb" id="tRight">&#9654;</div>
   </div>
@@ -236,7 +233,7 @@ const Input = {
   mouse: { sx: 0, sy: 0, down: false, active: false, lastMove: -1e9 },
   pad: { on: false, lx: 0, ly: 0, rx: 0, ry: 0, a: false, b: false, x: false, lt: false, rt: false, start: false, up: false, down: false, left: false, right: false, rHold: 0, rAng: 0 },
   padPrev: {},
-  touch: { left: false, right: false, jump: false, jet: false, fire: false, run: false, angle: 0, aiming: false },
+  touch: { left: false, right: false, jump: false, jet: false, fire: false, angle: 0, aiming: false },
   // edge flags, consumed by the simulation
   edge: { jump: false, fire: false, pause: false },
   // menu edges
@@ -247,7 +244,7 @@ const Input = {
 
 const KEYMAP = {
   left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'],
-  jump: ['Space'], jet: ['ShiftLeft', 'ShiftRight'], fire: ['KeyJ'], run: ['KeyK'],
+  jump: ['Space'], jet: ['ShiftLeft', 'ShiftRight'], fire: ['KeyJ'],
 };
 const kdown = name => KEYMAP[name].some(k => Input.keys[k]);
 
@@ -341,7 +338,7 @@ function moveX() {
 const jumpHeld = () => kdown('jump') || (Input.pad.on && Input.pad.a) || Input.touch.jump;
 const jetHeld = () => kdown('jet') || (Input.pad.on && Input.pad.lt) || Input.touch.jet;
 const fireHeld = () => Input.mouse.down || kdown('fire') || (Input.pad.on && Input.pad.rt) || Input.touch.fire;
-const runHeld = () => kdown('run') || (Input.pad.on && Input.pad.x) || Input.touch.run;
+const runHeld = () => jumpHeld();   // hold JUMP to run (Chonx jumps first, then runs on landing)
 
 // aim angle from the player's center
 function aimAngle(px, py, facing) {
@@ -391,8 +388,6 @@ function setupTouch() {
   bindTouch('tRight', () => Input.touch.right = true, () => Input.touch.right = false);
   bindTouch('tJump', () => { Input.touch.jump = true; Input.edge.jump = true; }, () => Input.touch.jump = false);
   bindTouch('tJet', () => Input.touch.jet = true, () => Input.touch.jet = false);
-  // RUN is a toggle on touch (your left thumb is already on the arrows)
-  bindTouch('tRun', () => { Input.touch.run = !Input.touch.run; $('tRun').classList.toggle('lit', Input.touch.run); }, () => { });
   bindTouch('tPause', () => { Input.edge.pause = true; }, () => { });
   bindTouch('tFire',
     (e, el) => { Input.touch.angle = dialAngle(e, el); Input.touch.aiming = true; Input.touch.fire = true; Input.edge.fire = true; },
@@ -2812,8 +2807,8 @@ function showTitle() {
   items.push({ label: 'FULLSCREEN', action: toggleFullscreen, cls: 'pink' });
   showMenu('title', 'titleMenu', items);
   $('titleHint').innerHTML = isCoarse()
-    ? 'TOUCH: &#9664; &#9654; MOVE &middot; RUN (TAP TO TOGGLE) &middot; JUMP (TAP TWICE = DOUBLE JUMP) &middot; JET &middot; DRAG THE DIAL TO AIM + FIRE'
-    : 'KEYBOARD: A/D MOVE &middot; SPACE JUMP (TAP TWICE = DOUBLE JUMP) &middot; K RUN &middot; J FIRE (HOLD W/S TO AIM) OR MOUSE AIM + CLICK &middot; SHIFT JET &middot; ESC PAUSE<br>CONTROLLER: L-STICK MOVE &middot; A JUMP (TWICE = DOUBLE) &middot; X RUN &middot; R-STICK AIM &middot; RT FIRE &middot; LT JET &middot; START PAUSE';
+    ? 'TOUCH: &#9664; &#9654; MOVE &middot; JUMP (TAP TWICE = DOUBLE JUMP, HOLD = RUN) &middot; JET &middot; DRAG THE DIAL TO AIM + FIRE'
+    : 'KEYBOARD: A/D MOVE &middot; SPACE JUMP (TAP TWICE = DOUBLE JUMP, HOLD = RUN) &middot; J FIRE (HOLD W/S TO AIM) OR MOUSE AIM + CLICK &middot; SHIFT JET &middot; ESC PAUSE<br>CONTROLLER: L-STICK MOVE &middot; A JUMP (TWICE = DOUBLE, HOLD = RUN) &middot; R-STICK AIM &middot; RT FIRE &middot; LT JET &middot; START PAUSE';
 }
 function showConfirm() {
   G.state = 'confirm';
