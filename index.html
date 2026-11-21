@@ -1236,7 +1236,7 @@ class Enemy {
     Audio2.sfx('ekill'); shake(this.isBoss ? 10 : 2);
     burst(this.cx, this.cy, this.isBoss ? 60 : 16, this.colors || ['#fff', '#ffe14d', '#ff4bd8'], this.isBoss ? 4 : 2.4, 30);
     if (G.jetUnlocked && this.refuel) P.fuel = Math.min(100, P.fuel + KILL_REFUEL);
-    if (!this.isBoss && !this.noDrop && Math.random() < 0.05) props.push(new Grass(this.cx, Math.min(this.y + this.h, ROWS * TILE - 2 * TILE), true));
+    if (!this.isBoss && !this.noDrop && Math.random() < (this.grassChance || 0.05)) props.push(new Grass(this.cx, Math.min(this.y + this.h, ROWS * TILE - 2 * TILE), true));
     this.onKill && this.onKill();
   }
   gravityMove(turnAtLedge) {
@@ -1495,6 +1495,27 @@ class Cell {
   draw(c) {
     drawSprite(c, S.cell, this.x - Cam.x, this.y + 5 + Math.sin(this.t) * 1.5 - CAM_Y);
     if (Math.sin(this.t * 1.7) > 0.95) { c.fillStyle = '#fff'; c.fillRect(Math.round(this.x - Cam.x + 3), Math.round(this.y - CAM_Y - 4), 1, 1); }
+  }
+}
+// ALT ACCOUNT — extra life token (when your main gets cooked, log into your alt)
+class AltAccount {
+  constructor(x, y) { this.x = x; this.y = y - 10; this.t = 0; this.dead = false; }
+  update() {
+    this.t++;
+    if (P && !P.dead && Math.abs(P.cx - this.x) < 11 && Math.abs(P.cy - this.y) < 15) {
+      this.dead = true; G.lives++; L.taken[this.key] = 1; Audio2.sfx('oneup');
+      floatText(P.cx, P.y - 12, 'ALT ACCOUNT! +1 LIFE', '#39ff6a', 90);
+      burst(this.x, this.y, 24, ['#39ff6a', '#ffe14d', '#fff', '#b04bff'], 2.5, 30);
+    }
+  }
+  draw(c) {
+    const x = this.x - Cam.x, y = this.y - CAM_Y + Math.sin(this.t * 0.08) * 2;
+    c.globalAlpha = 0.35 + Math.sin(this.t * 0.15) * 0.15; c.fillStyle = '#39ff6a';
+    c.beginPath(); c.arc(x, y, 11, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+    c.fillStyle = '#0b1a0e'; c.fillRect(Math.round(x - 9), Math.round(y - 9), 18, 18);
+    c.strokeStyle = this.t % 20 < 10 ? '#ffe14d' : '#39ff6a'; c.lineWidth = 1; c.strokeRect(Math.round(x - 9) + 0.5, Math.round(y - 9) + 0.5, 17, 17);
+    drawSprite(c, S.chonx.idle, x, y + 7, { scale: 0.62 });
+    c.fillStyle = '#ffe14d'; c.fillRect(Math.round(x + 4), Math.round(y - 9), 6, 4); c.fillStyle = '#0b1a0e'; c.fillRect(Math.round(x + 6), Math.round(y - 8), 2, 2);
   }
 }
 class Grass {
@@ -1992,11 +2013,18 @@ class Brayn extends Boss {
     this.phase = 1; this.contact = 16; this.hopCd = 90; this.spitCd = 60; this.spitAnim = 0;
     this.summonCd = 200; this.laserCd = 160; this.ratioCd = 200; this.resetCd = 300; this.trans = 0;
     this.colors = ['#e85a8a', '#7dff4a', '#c8384a', '#fff', '#efe6c8'];
-    this.decoys = [];
+    this.decoys = []; this.grassCd = 1800;
+  }
+  sproutGrass() {
+    if (props.some(p => p instanceof Grass && !p.dead && p.x > arenaL() && p.x < arenaR())) return;   // max one in the arena
+    const x = rand(arenaL() + 30, arenaR() - 30);
+    props.push(new Grass(x, GROUND_Y, false)); burst(x, GROUND_Y - 6, 14, ['#3fd14a', '#9cff7a', '#fff'], 2, 25);
+    floatText(x, GROUND_Y - 20, 'GRASS SPOTTED', '#3fd14a', 60);
   }
   invulnerable() { return this.trans > 0 || this.wake > 0; }
   setPhase(n) {
     this.phase = n; this.trans = 80; shake(10); Audio2.sfx('boom');
+    this.sproutGrass();
     burst(this.cx, this.cy, 50, this.colors, 4, 35);
     if (n === 2) floatText(this.cx, this.y - 16, 'RECOMMENDED FOR YOU', '#ff4bd8', 100);
     if (n === 3) {
@@ -2013,6 +2041,7 @@ class Brayn extends Boss {
     this.decoys = this.decoys.filter(d => !d.dead);
     if (this.wake > 0) { this.wake--; this.vy = Math.min(this.vy + GRAV, MAXFALL); physY(this, this.vy); return; }
     if (this.trans > 0) { this.trans--; this.vx = 0; this.vy = Math.min(this.vy + GRAV, MAXFALL); physY(this, this.vy); return; }
+    if (--this.grassCd <= 0) { this.grassCd = 1800; this.sproutGrass(); }
     if (this.phase === 1 && this.hp <= 100) { this.setPhase(2); return; }
     if (this.phase === 2 && this.hp <= 50) { this.setPhase(3); return; }
     if (P) this.facing = sign(P.cx - this.cx) || this.facing;
@@ -2043,6 +2072,7 @@ class Brayn extends Boss {
             const x = i === 0 ? arenaL() + 18 : arenaR() - 18;
             const e = t === 'clanker' ? new Clanker(x, 90, { size: 16 }) : new ENEMY_TYPES[t](x, GROUND_Y - 1);
             if (t === 'rat') e.vx = i === 0 ? 1.4 : -1.4;
+            e.grassChance = 0.25;
             e.active = true; enemies.push(e); burst(x, GROUND_Y - 14, 12, ['#ff4bd8', '#fff'], 2, 18);
           }
         }
@@ -2249,6 +2279,30 @@ class LB {
   ceil(x0, x1, h) { return this.fill(x0, x1, 0, h - 1, '#'); }
   e(type, x, row, o = {}) { this.ents.push({ type, x: x * TILE + 8, y: (row + 1) * TILE, o }); return this; }
   cells(x0, x1, row) { for (let x = x0; x <= x1; x++) this.e('cell', x, row); return this; }
+  // add brain cells along open ground (never in the boss arena) until the level holds exactly `target`
+  topUpCells(target) {
+    const have = this.ents.filter(e => e.type === 'cell').length;
+    let need = target - have; if (need <= 0) return this;
+    const used = new Set(this.ents.filter(e => e.type === 'cell').map(e => Math.round((e.x - 8) / TILE)));
+    const busy = new Set(this.ents.filter(e => e.type !== 'cell').map(e => Math.round((e.x - 8) / TILE)));
+    const cand = [];
+    for (let x = 4; x < (this.arena || this.w) - 2; x++) {
+      if (used.has(x) || busy.has(x)) continue;
+      let g = -1;
+      for (let y = 2; y < ROWS; y++) { const t = this.g[y][x]; if (t === '#' || t === 'B' || t === '=' || t === '<' || t === '>') { g = y; break; } if (t === 'V' || t === '~') break; }
+      if (g < 5) continue;
+      if (this.g[g - 1][x] !== ' ' || this.g[g - 2][x] !== ' ' || this.g[g - 3][x] !== ' ') continue;
+      cand.push([x, g]);
+    }
+    // spread evenly, little arcs of height
+    const step = cand.length / need;
+    for (let k = 0; k < need && k < cand.length; k++) {
+      const [x, g] = cand[Math.floor(k * step)];
+      const arc = [3, 3, 4, 3, 3][k % 5];
+      this.e('cell', x, g - arc);
+    }
+    return this;
+  }
 }
 
 const LEVELS = [
@@ -2273,6 +2327,7 @@ const LEVELS = [
     b.e('npc', 184, 11); b.e('npc', 186, 11);
     b.buf(192, 193, 10); b.buf(195, 196, 9); b.cells(192, 196, 7);
     b.ground(199, 249); b.e('npc', 205, 11); b.e('npc', 208, 11); b.e('npc', 211, 11); b.block(214, 215, 10, 11); b.e('grass', 220, 11);
+    b.e('alt', 146, 3);
     b.arena = 226; b.e('boss', 240, 11);
     return b;
   } },
@@ -2294,6 +2349,7 @@ const LEVELS = [
     b.e('baiter', 187, 4, { line: 60 });
     b.ground(190, 210, 11); b.plat(195, 199, 7); b.cells(195, 199, 6); b.e('npc', 200, 10); b.e('npc', 204, 10); b.e('ratio', 207, 3);
     b.ground(214, 261); b.e('npc', 218, 11); b.e('npc', 221, 11); b.e('grass', 230, 11);
+    b.e('alt', 148, 4);
     b.arena = 238; b.e('boss', 250, 11);
     return b;
   } },
@@ -2312,6 +2368,7 @@ const LEVELS = [
     b.ground(175, 200); b.e('clanker', 182, 6); b.e('clanker', 188, 5); b.e('clanker', 194, 7); b.block(197, 198, 9, 11);
     b.liquid(201, 203);
     b.ground(204, 271); b.conv(208, 220, '>'); b.e('npc', 214, 11); b.e('baiter', 224, 3, { line: 60 }); b.e('crusher', 232, 11, { delay: 60 }); b.e('grass', 240, 11);
+    b.e('alt', 135, 4);
     b.arena = 248; b.e('boss', 262, 11);
     return b;
   } },
@@ -2326,7 +2383,9 @@ const LEVELS = [
     b.plat(142, 143, 10);
     b.ground(145, 170); b.e('crash', 150, 11); b.e('npc', 155, 11); b.e('crash', 160, 11); b.block(163, 164, 10, 11);
     b.ground(174, 231); b.e('aura', 180, 11); b.e('crash', 186, 11); b.e('aura', 192, 11); b.e('grass', 200, 11); b.cells(176, 182, 9);
+    b.e('aura', 44, 11); b.e('crash', 57, 11); b.e('aura', 88, 11); b.e('clanker', 115, 6); b.e('crash', 130, 11); b.e('aura', 157, 11);
     b.e('spot', 25, 0); b.e('spot', 78, 0, { ph: 0.6 }); b.e('spot', 140, 0, { ph: 1.2 }); b.e('spot', 170, 0, { ph: 0.3 }); b.e('spot', 201, 0, { ph: 0.9 });
+    b.e('alt', 128, 5);
     b.arena = 208; b.e('boss', 222, 11);
     return b;
   } },
@@ -2348,6 +2407,7 @@ const LEVELS = [
     b.ground(179, 205); b.e('ratspawn', 184, 11); b.e('clanker', 190, 6); b.e('baiter', 196, 3, { line: 56 }); b.cells(186, 194, 9);
     b.liquid(206, 208);
     b.ground(209, 261); b.e('grass', 220, 11); b.e('ratspawn', 222, 11);
+    b.e('alt', 143, 6);
     b.arena = 238; b.e('boss', 252, 11);
     return b;
   } },
@@ -2418,6 +2478,7 @@ const STORY = {
 function buildLevelData(def, i) {
   if (def.data) return def.data;
   const b = def.build();
+  b.topUpCells(100);   // every level holds exactly 100 brain cells
   const th = THEMES[def.theme]; buildTheme(th, 1000 + i * 77);
   const grid = b.g;
   // pre-render the static tiles once
@@ -2446,6 +2507,7 @@ function spawnLevel(fromCheckpoint) {
     const key = 'e' + idx;
     if (e.type === 'cell') { if (!L.taken[key]) { const c = new Cell(e.x, e.y); c.key = key; props.push(c); } }
     else if (e.type === 'grass') { if (!L.taken[key]) { const g = new Grass(e.x, e.y, false); g.key = key; props.push(g); } }
+    else if (e.type === 'alt') { if (!L.taken[key]) { const a = new AltAccount(e.x, e.y); a.key = key; props.push(a); } }
     else if (e.type === 'spring') props.push(new Spring(e.x, e.y));
     else if (e.type === 'cp') { props.push(new Checkpoint(e.x, e.y)); cpX = e.x; cpY = e.y; }
     else if (e.type === 'boss') L.bossSpot = e;
