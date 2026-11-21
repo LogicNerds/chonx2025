@@ -248,9 +248,9 @@ const Input = {
   usingTouchUI: false,
 };
 
-// secret: up up down down left right left right B A on the title screen (keyboard or controller)
+// secret: up up down down left right left right B A on the title screen (keyboard)
 const Cheat = {
-  seq: ['U', 'U', 'D', 'D', 'L', 'R', 'L', 'R', 'B', 'A'], i: 0,
+  seq: ['U', 'U', 'D', 'D', 'L', 'R', 'L', 'R', 'B', 'A'], i: 0, holdStart: 0,
   feed(t) {
     if (typeof G === 'undefined' || G.state !== 'title') { this.i = 0; return false; }
     if (t === this.seq[this.i]) this.i++;
@@ -333,11 +333,12 @@ function pollGamepad() {
   if (P.b && !prev.b) Input.menu.back = true;
   if (P.rt && !prev.rt) Input.edge.fire = true;
   if (P.start && !prev.start) Input.edge.pause = true;
-  const tokens = [];
-  if (P.up && !prev.du) tokens.push('U'); if (P.down && !prev.dd) tokens.push('D');
-  if (P.left && !prev.dl) tokens.push('L'); if (P.right && !prev.dr) tokens.push('R');
-  if (P.b && !prev.b) tokens.push('B'); if (P.a && !prev.a) tokens.push('A');
-  for (const t of tokens) if (Cheat.feed(t)) { Input.menu.ok = false; Input.menu.back = false; Input.edge.jump = false; showLevelSelect(); }
+  // secret (controller): hold L1 + R1 for 5 seconds on the title screen
+  const l1r1 = bt(4) && bt(5);
+  if (l1r1 && typeof G !== 'undefined' && G.state === 'title') {
+    if (!Cheat.holdStart) Cheat.holdStart = performance.now();
+    else if (Cheat.holdStart > 0 && performance.now() - Cheat.holdStart >= 5000) { Cheat.holdStart = -1; showLevelSelect(); }
+  } else if (!l1r1) Cheat.holdStart = 0;
   const vUp = P.up || P.ly < -0.6, vDown = P.down || P.ly > 0.6;
   if (vUp && !prev.vUp) Input.menu.up = true;
   if (vDown && !prev.vDown) Input.menu.down = true;
